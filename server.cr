@@ -48,7 +48,12 @@ sse.on_message do |message|
   tx.send "\u001b[2J"
   tx.send "\u001b[0;0f"
 
-  games = JSON.parse(message.data[0][8..message.data[0].size-2])["games"]
+  begin
+    games = JSON.parse(message.data[0])["value"]["games"]
+  rescue
+    games = JSON.parse(message.data[0][8..message.data[0].size-2])["games"]
+  end
+
   tx.send %(Day #{games["sim"]["day"]}).colorize.bold.to_s
 
   tx.send "\u001b[0;1f"
