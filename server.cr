@@ -2,6 +2,7 @@ require "socket"
 require "sse"
 require "json"
 require "colorize"
+require "./color_diff.cr"
 
 tx = Channel(String).new
 
@@ -33,42 +34,42 @@ spawn do
   end
 end
 
-def get_hex_color(s : String)
-  r = s[1..2].to_u8 base: 16
-  g = s[3..4].to_u8 base: 16
-  b = s[5..6].to_u8 base: 16
-  Colorize::ColorRGB.new r, g, b
-end
 
 ENV["STREAM_URL"] ||= "https://www.blaseball.com/events/streamData"
+color_map = ColorMap.new "color_data.json"
 
-sse = HTTP::ServerSentEvents::EventSource.new ENV["STREAM_URL"]
-sse.on_message do |message|
-  sleep 0.2
-  tx.send "\u001b[2J"
-  tx.send "\u001b[0;0f"
-
+while true
   begin
-    games = JSON.parse(message.data[0])["value"]["games"]
-  rescue
-    games = JSON.parse(message.data[0][8..message.data[0].size-2])["games"]
+    sse = HTTP::ServerSentEvents::EventSource.new ENV["STREAM_URL"]
+    sse.on_message do |message|
+      sleep 0.2
+      tx.send "\u001b[2J"
+      tx.send "\u001b[0;0f"
+
+      begin
+        games = JSON.parse(message.data[0])["value"]["games"]
+      rescue
+        games = JSON.parse(message.data[0][8..message.data[0].size-2])["games"]
+      end
+
+      tx.send %(Day #{games["sim"]["day"].as_i + 1}, Season #{games["sim"]["season"].as_i + 1}).colorize.bold.to_s
+      tx.send "\u001b[2;0f"
+      tx.send %(#{games["sim"]["eraTitle"].to_s.colorize.fore(color_map.get_hex_color games["sim"]["eraColor"].to_s)} - #{games["sim"]["subEraTitle"].to_s.colorize.fore(color_map.get_hex_color games["sim"]["subEraColor"].to_s)}).colorize.underline.to_s
+      i = 4
+
+      games["schedule"].as_a.each do |game|
+        tx.send "\u001b[#{i};0f"
+        tx.send %(#{game["awayTeamName"].colorize.bold.fore(color_map.get_hex_color game["awayTeamColor"].as_s)} #{"vs.".colorize.underline} #{game["homeTeamName"].colorize.bold.fore(color_map.get_hex_color game["homeTeamColor"].as_s)})
+        tx.send "\u001b[#{i+1};0f"
+        tx.send %(#{game["awayScore"].to_s.colorize.fore(color_map.get_hex_color game["awayTeamColor"].as_s).bold} - #{game["homeScore"].to_s.colorize.bold.fore(color_map.get_hex_color game["homeTeamColor"].as_s)})
+        tx.send "\u001b[#{i+2};0f"
+        tx.send %(#{game["lastUpdate"]})
+        i+=3+game["lastUpdate"].as_s.split("\n").size
+      end
+    end
+
+    sse.run
+  rescue ex
+    pp ex.inspect_with_backtrace
   end
-
-  tx.send %(Day #{games["sim"]["day"]}).colorize.bold.to_s
-
-  tx.send "\u001b[0;1f"
-  i = 2
-
-  games["schedule"].as_a.each do |game|
-    tx.send "\u001b[#{i};0f"
-    tx.send %(#{game["awayTeamName"].colorize.bold.fore(get_hex_color game["awayTeamColor"].as_s)} #{"vs.".colorize.underline} #{game["homeTeamName"].colorize.bold.fore(get_hex_color game["homeTeamColor"].as_s)})
-    tx.send "\u001b[#{i+1};0f"
-    tx.send %(#{game["awayScore"].to_s.colorize.fore(get_hex_color game["awayTeamColor"].as_s).bold} - #{game["homeScore"].to_s.colorize.bold.fore(get_hex_color game["homeTeamColor"].as_s)})
-    tx.send "\u001b[#{i+2};0f"
-    tx.send %(#{game["lastUpdate"]})
-    i+=3+game["lastUpdate"].as_s.split("\n").size
-  end
-
 end
-
-sse.run
