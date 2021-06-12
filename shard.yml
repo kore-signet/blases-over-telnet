@@ -1,0 +1,6 @@
+name: blases-over-telnet
+version: 0.1.0
+
+dependencies:
+  sse:
+    github: y2k2mt/sse.cr

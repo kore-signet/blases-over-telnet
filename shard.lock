@@ -1,0 +1,6 @@
+version: 2.0
+shards:
+  sse:
+    git: https://github.com/y2k2mt/sse.cr.git
+    version: 0.10.0
+
