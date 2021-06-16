@@ -21,7 +21,7 @@ class ColorMap
 
   def get_hex_color(s : String)
     if s.empty?
-      return Colorize::ColorRGB.new 255,255,255
+      return Colorize::Color256.new 15_u8
     end
 
     r = s[1..2].to_u8 base: 16
@@ -41,7 +41,7 @@ class ColorMap
 
     (@color_map.map do |compare,ansi|
       cl, ca, cb = compare
-      {Math.sqrt(((l - cl) ** 2) + ((a - ca) ** 2) + ((b - cb) ** 2)),ansi}
+      {((l - cl) ** 2) + ((a - ca) ** 2) + ((b - cb) ** 2),ansi}
     end).to_a.sort_by { |a| a[0] }[0][1]
   end
 
