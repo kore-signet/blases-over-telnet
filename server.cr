@@ -63,8 +63,6 @@ while true
       tx.send "\u001b[2J"
       tx.send "\u001b[0;0f"
 
-      puts last_message
-
       msg = String.build do |m|
         begin
           games = JSON.parse(message.data[0])["value"]["games"]
@@ -98,7 +96,7 @@ while true
       if !msg.empty?
         last_message = msg
       end
-      
+
       tx.send msg
     end
 
