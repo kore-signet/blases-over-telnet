@@ -10,6 +10,6 @@ COPY ./color_data.json /src/
 RUN apk add --update --upgrade --no-cache  ca-certificates openssl-dev openssl-libs-static
 
 RUN shards install
-RUN crystal build --release --static --no-debug server.cr
+RUN crystal build --release --static server.cr
 
 CMD ["./server"]
