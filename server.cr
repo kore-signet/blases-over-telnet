@@ -83,7 +83,6 @@ def make_ord(number)
 end
 
 def render_game(colorizer,game)
-  pp game
   String.build do |m|
     m << "\n\r"
     m << %(#{colorizer.colorize true, (game["awayTeamName"].as_s + " (#{game["awayScore"]})")} #{"@".colorize.underline} #{colorizer.colorize false, (game["homeTeamName"].as_s + " (#{game["homeScore"]})")})
@@ -142,7 +141,7 @@ while true
         m << %(#{games["sim"]["eraTitle"].to_s.colorize.fore(color_map.get_hex_color games["sim"]["eraColor"].to_s)} - #{games["sim"]["subEraTitle"].to_s.colorize.fore(color_map.get_hex_color games["sim"]["subEraColor"].to_s)}).colorize.underline.to_s
         m << "\n\r"
 
-        games["schedule"].as_a.each do |game|
+        games["schedule"].as_a.sort_by {|g| g["awayTeamName"].to_s}.each do |game|
           colorizer.current_game = game.as_h
           m << render_game colorizer, game
         end
