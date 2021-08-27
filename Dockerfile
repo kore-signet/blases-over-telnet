@@ -1,15 +1,12 @@
 FROM crystallang/crystal:latest-alpine as build
 
-WORKDIR /src/
+WORKDIR /build/
 
-COPY ./server.cr /src/
-COPY ./shard.yml /src/
-COPY ./color_diff.cr /src/
-COPY ./color_data.json /src/
+COPY . .
 
 RUN apk add --update --upgrade --no-cache  ca-certificates openssl-dev openssl-libs-static
 
 RUN shards install
-RUN crystal build --release --static server.cr
+RUN crystal build --release --static src/server.cr
 
 CMD ["./server"]
