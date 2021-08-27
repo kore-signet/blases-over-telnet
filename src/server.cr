@@ -52,6 +52,8 @@ def handle_client(socket : TCPSocket, sockets : Array(Client), sources : Hash(St
     sockets << client
     sources["live"].add_client
 
+    socket << default_renderer.render sources["live"].last_data
+
     while line = socket.gets chomp: false
       if line.starts_with? "replay:"
         begin
@@ -115,7 +117,6 @@ end
 
 while data = tx.receive?
   to_delete = Array(Client).new
-  puts data[0]
   sockets.each.select(&.source.==(data[0])).each do |s|
     begin
       s.socket << s.render data[1]
