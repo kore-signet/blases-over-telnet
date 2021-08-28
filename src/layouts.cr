@@ -95,7 +95,20 @@ class DefaultLayout < Layout
           m << %(The #{colorizer.colorize false, game["homeTeamNickname"].as_s} #{"won against".colorize.underline} the #{colorizer.colorize true, game["awayTeamNickname"].as_s})
         end
       else
-        m << %(#{game["lastUpdate"]})
+        raw_game_update = %(#{game["lastUpdate"]})
+        begin
+          last_game_update = raw_game_update
+          line_break_regex = /(?<!\r)\n/
+          regex_match = last_game_update.match(line_break_regex)
+          while regex_match
+            last_game_update = last_game_update.sub(line_break_regex, "\r\n")
+            regex_match = last_game_update.match(line_break_regex)
+          end
+          m << last_game_update
+        rescue ex
+          puts ex.message
+          m << raw_game_update
+        end
       end
       m << "\n\r"
     end
