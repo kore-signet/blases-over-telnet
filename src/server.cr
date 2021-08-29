@@ -1,4 +1,5 @@
 require "socket"
+require "http/client"
 require "sse"
 require "json"
 require "./sources.cr"
@@ -57,7 +58,16 @@ def handle_client(socket : TCPSocket, sockets : Array(Client), sources : Hash(St
     while line = socket.gets chomp: false
       if line.starts_with? "replay:"
         begin
-          timestamp = Time::Format::ISO_8601_DATE_TIME.parse line.lstrip("replay:").lstrip
+          timestamp_string = line.lstrip("replay:").lstrip
+          if timestamp_string.starts_with? "season"
+            timestamp_chunks = timestamp_string.split
+            season = timestamp_chunks[1].to_i - 1
+            day = timestamp_chunks[-1].to_i - 1
+            response = HTTP::Client.get "https://api.sibr.dev/corsmechanics/time/season/#{season}/day/#{day}/"
+            timestamp_string = JSON.parse(response.body)[0]["startTime"].as_s
+          end
+
+          timestamp = Time::Format::ISO_8601_DATE_TIME.parse timestamp_string
 
           if !sources.has_key? "replay:#{timestamp}"
             sources["replay:#{timestamp}"] = LiveSource.new "https://api.sibr.dev/replay/v1/replay?from=#{Time::Format::ISO_8601_DATE_TIME.format timestamp}", "replay:#{timestamp}", tx
