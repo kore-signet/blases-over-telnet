@@ -44,9 +44,9 @@ def handle_client(socket : TCPSocket, sockets : Array(Client), sources : Hash(St
     colorizer = Colorizer.new color_map
     default_renderer = DefaultLayout.new colorizer
 
-    socket << "\x1b[1;1H"
-    socket << "\x1b[0J"
-    socket << "\x1b[10000B"
+    socket << "\x1b[1;1H"   # return cusor to start of page
+    socket << "\x1b[0J"     # clear from cursor to end end of the page
+    socket << "\x1b[10000B" # move cursor down
     socket << "\r"
 
     client = Client.new default_renderer, socket, "live"
@@ -68,6 +68,8 @@ def handle_client(socket : TCPSocket, sockets : Array(Client), sources : Hash(St
           end
 
           timestamp = Time::Format::ISO_8601_DATE_TIME.parse timestamp_string
+
+          client.renderer.clear_last
 
           if !sources.has_key? "replay:#{timestamp}"
             sources["replay:#{timestamp}"] = LiveSource.new "https://api.sibr.dev/replay/v1/replay?from=#{Time::Format::ISO_8601_DATE_TIME.format timestamp}", "replay:#{timestamp}", tx

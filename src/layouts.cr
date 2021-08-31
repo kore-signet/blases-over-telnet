@@ -60,6 +60,7 @@ class DefaultLayout < Layout
       m << "\x1b7"
       m << "\x1b[1A\x1b[1J"
       m << "\x1b[1;1H"
+      m << "\x1b[0J"
       m << %(Day #{games["sim"]["day"].as_i + 1}, Season #{games["sim"]["season"].as_i + 1}).colorize.bold.to_s
       m << "\n\r"
       m << %(#{games["sim"]["eraTitle"].to_s.colorize.fore(@colorizer.color_map.get_hex_color games["sim"]["eraColor"].to_s)} - #{games["sim"]["subEraTitle"].to_s.colorize.fore(@colorizer.color_map.get_hex_color games["sim"]["subEraColor"].to_s)}).colorize.underline.to_s
@@ -70,45 +71,39 @@ class DefaultLayout < Layout
         m << render_game colorizer, game
       end
 
-      m << "\x1b8"
+      m << "\x1b7"
     end
 
     @last_message
   end
 
-  def get_team_name(game : JSON::Any, away : Bool)
-    if @last_league.has_key? "teams"
-      target_team_id = away ? game["awayTeam"] : game["homeTeam"]
-      last_league["teams"].as_a.each do |team_json|
-        team = team_json.as_h
-        if team["id"] == target_team_id
-          team_name = team["fullName"].to_s
-          if team.has_key? "state"
-            team_state = team["state"].as_h
-            if team_state.has_key? "scattered"
-              team_name = team_state["scattered"].as_h["fullName"].to_s
-            end
-          end
-          return team_name
-        end
-      end
-      raise "Team with id #{target_team_id} not found in sim league object"
-    else
-      return away ? game["awayTeamName"].to_s : game["homeTeamName"].to_s
+  def get_team_ordering(game : JSON::Any)
+    team_name = get_team_name game, true
+    if team_name == "nullteam"
+      get_team_name game, false
     end
+    return team_name
+  end
+
+  def get_team_name(game : JSON::Any, away : Bool)
+    get_team_identifier game, away, "awayTeamName", "homeTeamName", "fullName"
   end
 
   def get_team_nickname(game : JSON::Any, away : Bool)
+    get_team_identifier game, away, "awayTeamNickname", "homeTeamNickname", "nickname"
+  end
+
+  def get_team_identifier(game : JSON::Any, away : Bool, away_game_identifier : String, home_game_identifier : String, identifier : String)
     if @last_league.has_key? "teams"
       target_team_id = away ? game["awayTeam"] : game["homeTeam"]
       last_league["teams"].as_a.each do |team_json|
         team = team_json.as_h
         if team["id"] == target_team_id
-          team_name = team["nickname"].to_s
+          team_name = team[identifier].to_s
           if team.has_key? "state"
             team_state = team["state"].as_h
             if team_state.has_key? "scattered"
-              team_name = team_state["scattered"].as_h["nickname"].to_s
+              team_name = team_state["scattered"].as_h[identifier].to_s
             end
           end
           return team_name
@@ -116,7 +111,7 @@ class DefaultLayout < Layout
       end
       raise "Team with id #{target_team_id} not found in sim league object"
     else
-      return away ? game["awayTeamNickname"].to_s : game["homeTeamNickname"].to_s
+      return away ? game[away_game_identifier].to_s : game[home_game_identifier].to_s
     end
   end
 
@@ -140,12 +135,24 @@ class DefaultLayout < Layout
       m << "\n\r"
 
       if game["finalized"].as_bool?
-        away_score = (game["awayScore"].as_f? || game["awayScore"].as_i?).not_nil!
-        home_score = (game["homeScore"].as_f? || game["homeScore"].as_i?).not_nil!
-        if away_score > home_score
-          m << %(The #{colorizer.colorize true, away_team_nickname} #{"won against".colorize.underline} the #{colorizer.colorize false, home_team_nickname})
+        if away_team_name == "nullteam"
+          if home_team_name == "nullteam"
+            m << "Game cancelled"
+          else
+            m << %(The #{colorizer.colorize false, home_team_nickname} #{"non-lost".colorize.underline}.)
+          end
         else
-          m << %(The #{colorizer.colorize false, home_team_nickname} #{"won against".colorize.underline} the #{colorizer.colorize true, away_team_nickname})
+          if home_team_name == "nullteam"
+            m << %(The #{colorizer.colorize true, away_team_nickname} #{"non-lost".colorize.underline}.)
+          else
+            away_score = (game["awayScore"].as_f? || game["awayScore"].as_i?).not_nil!
+            home_score = (game["homeScore"].as_f? || game["homeScore"].as_i?).not_nil!
+            if away_score > home_score
+              m << %(The #{colorizer.colorize true, away_team_nickname} #{"won against".colorize.underline} the #{colorizer.colorize false, home_team_nickname})
+            else
+              m << %(The #{colorizer.colorize false, home_team_nickname} #{"won against".colorize.underline} the #{colorizer.colorize true, away_team_nickname})
+            end
+          end
         end
       else
         last_game_update = %(#{game["lastUpdate"]})
