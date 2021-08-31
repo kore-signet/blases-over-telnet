@@ -139,11 +139,11 @@ class DefaultLayout < Layout
           if home_team_name == "nullteam"
             m << "Game cancelled"
           else
-            m << %(The #{colorizer.colorize false, home_team_nickname} #{"non-lost".colorize.underline}.)
+            m << %(The #{colorizer.colorize false, home_team_nickname} #{"non-lost".colorize.underline} due to nullification.)
           end
         else
           if home_team_name == "nullteam"
-            m << %(The #{colorizer.colorize true, away_team_nickname} #{"non-lost".colorize.underline}.)
+            m << %(The #{colorizer.colorize true, away_team_nickname} #{"non-lost".colorize.underline} due to nullification.)
           else
             away_score = (game["awayScore"].as_f? || game["awayScore"].as_i?).not_nil!
             home_score = (game["homeScore"].as_f? || game["homeScore"].as_i?).not_nil!
