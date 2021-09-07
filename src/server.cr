@@ -12,6 +12,7 @@ class Client
   property renderer : Layout
   property source : String
   property socket : TCPSocket
+  property writeable : Bool = true
   property closed : Bool = false
 
   def initialize(@renderer, @socket, @source)
@@ -44,9 +45,9 @@ def handle_client(socket : TCPSocket, sockets : Array(Client), sources : Hash(St
     colorizer = Colorizer.new color_map
     default_renderer = DefaultLayout.new colorizer
 
-    socket << "\x1b[1;1H"
-    socket << "\x1b[0J"
-    socket << "\x1b[10000B"
+    socket << "\x1b[1;1H"   # return cusor to start of page
+    socket << "\x1b[0J"     # clear from cursor to end end of the page
+    socket << "\x1b[10000B" # move cursor down
     socket << "\r"
 
     client = Client.new default_renderer, socket, "live"
@@ -57,6 +58,7 @@ def handle_client(socket : TCPSocket, sockets : Array(Client), sources : Hash(St
 
     while line = socket.gets chomp: false
       if line.starts_with? "replay:"
+        client.writeable = true
         begin
           timestamp_string = line.lstrip("replay:").lstrip
           if timestamp_string.starts_with? "season"
@@ -69,6 +71,8 @@ def handle_client(socket : TCPSocket, sockets : Array(Client), sources : Hash(St
 
           timestamp = Time::Format::ISO_8601_DATE_TIME.parse timestamp_string
 
+          client.renderer.clear_last
+
           if !sources.has_key? "replay:#{timestamp}"
             sources["replay:#{timestamp}"] = LiveSource.new "https://api.sibr.dev/replay/v1/replay?from=#{Time::Format::ISO_8601_DATE_TIME.format timestamp}", "replay:#{timestamp}", tx
           end
@@ -77,6 +81,7 @@ def handle_client(socket : TCPSocket, sockets : Array(Client), sources : Hash(St
           sources["replay:#{timestamp}"].add_client
 
           client.source = "replay:#{timestamp}"
+          
           socket << "\x1b[1;1H"
           socket << "\x1b[0J"
           socket << "remembering before...".colorize.red.bold
@@ -87,7 +92,13 @@ def handle_client(socket : TCPSocket, sockets : Array(Client), sources : Hash(St
           pp ex.inspect_with_backtrace
           socket << "invalid timestamp"
         end
+      elsif line.starts_with?("pause")
+        client.writeable = false
+      elsif line.starts_with?("resume")
+        client.writeable = true
       elsif line.starts_with? "live"
+        client.writeable = true
+
         if client.source != "live"
           sources[client.source].rm_client
           sources["live"].add_client
@@ -128,8 +139,10 @@ end
 while data = tx.receive?
   to_delete = Array(Client).new
   sockets.each.select(&.source.==(data[0])).each do |s|
+    rendered_data = s.render data[1]
+    message = s.writeable ? rendered_data : "\x1b[0J"
     begin
-      s.socket << s.render data[1]
+      s.socket << message
     rescue
       puts "removing dead client from source #{s.source}"
       sources[s.source].rm_client
