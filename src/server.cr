@@ -2,9 +2,11 @@ require "socket"
 require "http/client"
 require "sse"
 require "json"
+require "colorize"
 require "./sources.cr"
 require "./layouts.cr"
 require "./color_diff.cr"
+require "./help.cr"
 #
 
 
@@ -46,9 +48,8 @@ def handle_client(socket : TCPSocket, sockets : Array(Client), sources : Hash(St
     default_renderer = DefaultLayout.new colorizer
 
     socket << "\x1b[1;1H"   # return cusor to start of page
-    socket << "\x1b[0J"     # clear from cursor to end end of the page
-    socket << "\x1b[10000B" # move cursor down
-    socket << "\r"
+    socket << "\x1b[0J"     # clear from cursor to the end of the page
+    socket << "\x1b[10000E" # move cursor down and to start of line
 
     client = Client.new default_renderer, socket, "live"
     sockets << client
@@ -96,6 +97,11 @@ def handle_client(socket : TCPSocket, sockets : Array(Client), sources : Hash(St
         client.writeable = false
       elsif line.starts_with?("resume")
         client.writeable = true
+      elsif line.starts_with?("help")
+        socket << "\x1b[1;1H"
+        socket << "\x1b[0J"
+        client.writeable = false
+        show_help(socket, line)
       elsif line.starts_with? "live"
         client.writeable = true
 
