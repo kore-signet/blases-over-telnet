@@ -1,7 +1,7 @@
 require "colorize"
 color_map = ColorMap.new "color_data.json"
 
-def make_ord(number)
+def make_ord(number : Number) : String
   number.to_s +
   case number.to_s[-1]
   when '1'
@@ -15,13 +15,26 @@ def make_ord(number)
   end
 end
 
+def make_newlines(input : String) : String
+  line_break_regex = /(?<!\r)\n/
+  result = input
+  regex_match = input.match(line_break_regex)
+  while regex_match
+    result = result.sub(line_break_regex, "\r\n")
+    regex_match = result.match(line_break_regex)
+  end
+  return result
+end
+
 class Colorizer
   property color_map : ColorMap
   property current_game : Hash(String,JSON::Any)
   def initialize(@color_map, @current_game = Hash(String,JSON::Any).new)
   end
 
-  def colorize(away?, string)
+  def colorize_string_for_team(
+      away? : Bool,
+      string : String) : String
     string
     .colorize
     .bold
@@ -77,16 +90,24 @@ class DefaultLayout < Layout
     @last_message
   end
 
-
-  def get_team_name(game : JSON::Any, away : Bool)
+  def get_team_name(
+      game : JSON::Any,
+      away : Bool) : String
     get_team_identifier game, away, "awayTeamName", "homeTeamName", "fullName"
   end
 
-  def get_team_nickname(game : JSON::Any, away : Bool)
+  def get_team_nickname(
+      game : JSON::Any,
+      away : Bool) : String
     get_team_identifier game, away, "awayTeamNickname", "homeTeamNickname", "nickname"
   end
 
-  def get_team_identifier(game : JSON::Any, away : Bool, away_game_identifier : String, home_game_identifier : String, identifier : String)
+  def get_team_identifier(
+      game : JSON::Any,
+      away : Bool,
+      away_game_identifier : String,
+      home_game_identifier : String,
+      identifier : String) : String
     if @last_league.has_key? "teams"
       target_team_id = away ? game["awayTeam"] : game["homeTeam"]
       last_league["teams"].as_a.each do |team_json|
@@ -108,21 +129,25 @@ class DefaultLayout < Layout
     end
   end
 
-  def render_game(colorizer,game)
+  def render_game(
+      colorizer : Colorizer,
+      game : JSON::Any) : String
     away_team_name = get_team_name(game, true)
     home_team_name = get_team_name(game, false)
     away_team_nickname = get_team_nickname(game, true)
     home_team_nickname = get_team_nickname(game, false)
     String.build do |m|
       m << "\n\r"
-      m << %(#{colorizer.colorize true, (away_team_name + " (#{game["awayScore"]})")} #{"@".colorize.underline} #{colorizer.colorize false, (home_team_name + " (#{game["homeScore"]})")})
+      m << %(#{colorizer.colorize_string_for_team true, (away_team_name + " (#{game["awayScore"]})")})
+      m << %( #{"@".colorize.underline} )
+      m << %(#{colorizer.colorize_string_for_team false, (home_team_name + " (#{game["homeScore"]})")})
       m << "\n\r"
       m << %(#{game["topOfInning"].as_bool ? "Top of the" : "Bottom of the"} #{make_ord game["inning"].as_i+1}).colorize.bold
 
       if game["topOfInning"].as_bool
-        m << %( - #{colorizer.colorize false, game["homePitcherName"].to_s} pitching)
+        m << %( - #{colorizer.colorize_string_for_team false, game["homePitcherName"].to_s} pitching)
       else
-        m << %( - #{colorizer.colorize true, game["awayPitcherName"].to_s} pitching)
+        m << %( - #{colorizer.colorize_string_for_team true, game["awayPitcherName"].to_s} pitching)
       end
 
       m << "\n\r"
@@ -131,25 +156,18 @@ class DefaultLayout < Layout
         away_score = (game["awayScore"].as_f? || game["awayScore"].as_i?).not_nil!
         home_score = (game["homeScore"].as_f? || game["homeScore"].as_i?).not_nil!
         if away_score > home_score
-          m << %(The #{colorizer.colorize true, away_team_nickname} #{"won against".colorize.underline} the #{colorizer.colorize false, home_team_nickname})
+          m << %(The #{colorizer.colorize_string_for_team true, away_team_nickname} #{"won against".colorize.underline} the #{colorizer.colorize_string_for_team false, home_team_nickname})
         else
-          m << %(The #{colorizer.colorize false, home_team_nickname} #{"won against".colorize.underline} the #{colorizer.colorize true, away_team_nickname})
+          m << %(The #{colorizer.colorize_string_for_team false, home_team_nickname} #{"won against".colorize.underline} the #{colorizer.colorize_string_for_team true, away_team_nickname})
         end
       else
-        last_game_update = %(#{game["lastUpdate"]})
-        line_break_regex = /(?<!\r)\n/
-        regex_match = last_game_update.match(line_break_regex)
-        while regex_match
-          last_game_update = last_game_update.sub(line_break_regex, "\r\n")
-          regex_match = last_game_update.match(line_break_regex)
-        end
-        m << last_game_update
+        m << make_newlines(game["lastUpdate"].as_s)
       end
       m << "\n\r"
     end
   end
 
-  def clear_last
+  def clear_last : Nil
     @last_message = "\x1b7\x1b[1A\x1b[1J\x1b[1;1H\rloading..\x1b8"
   end
 end
