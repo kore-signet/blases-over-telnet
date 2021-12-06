@@ -32,7 +32,7 @@ end
 
 sockets = Array(Client).new
 
-ENV["STREAM_URL"] ||= "https://www.blaseball.com/events/streamData"
+ENV["STREAM_URL"] ||= "https://api.blaseball.com/events/streamData"
 ENV["PORT"] ||= "8023"
 server = TCPServer.new "0.0.0.0", ENV["PORT"].to_i
 
