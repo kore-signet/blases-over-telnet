@@ -53,8 +53,9 @@ class DefaultLayout < Layout
   property last_message : String = ""
   property last_league : Hash(String,JSON::Any) = Hash(String,JSON::Any).new
   property colorizer : Colorizer
+  property feed_season_list : Hash(String,JSON::Any)
 
-  def initialize(@colorizer)
+  def initialize(@colorizer, @feed_season_list)
 
   end
 
@@ -76,8 +77,7 @@ class DefaultLayout < Layout
       m << "\x1b[0J"
       m << %(Day #{games["sim"]["day"].as_i + 1}, Season #{games["sim"]["season"].as_i + 1}).colorize.bold.to_s
       m << "\n\r"
-      m << %(#{games["sim"]["eraTitle"].to_s.colorize.fore(@colorizer.color_map.get_hex_color games["sim"]["eraColor"].to_s)} - #{games["sim"]["subEraTitle"].to_s.colorize.fore(@colorizer.color_map.get_hex_color games["sim"]["subEraColor"].to_s)}).colorize.underline.to_s
-      m << "\n\r"
+      m << render_season_identifier @colorizer, games.as_h
 
       games["schedule"].as_a.sort_by {|g| get_team_name g, true}.each do |game|
         colorizer.current_game = game.as_h
@@ -160,10 +160,33 @@ class DefaultLayout < Layout
         else
           m << %(The #{colorizer.colorize_string_for_team false, home_team_nickname} #{"won against".colorize.underline} the #{colorizer.colorize_string_for_team true, away_team_nickname})
         end
+        m << "\n\r"
       else
         m << make_newlines(game["lastUpdate"].as_s)
       end
-      m << "\n\r"
+    end
+  end
+
+  def render_season_identifier(
+    colorizer : Colorizer,
+    games : Hash(String, JSON::Any)) : String
+    sim = games["sim"]
+    id = sim["id"].to_s
+
+    if id != "thisidisstaticyo"
+      collection = @feed_season_list["items"][0]["data"]["collection"].as_a.index_by { |s| s["sim"] }
+      return %(#{collection[id]["name"]}\r\n)
+    else
+      era_title = sim["eraTitle"].to_s
+      sub_era_title = sim["subEraTitle"].to_s
+      era_color = colorizer.color_map.get_hex_color sim["eraColor"].to_s
+      sub_era_color = colorizer.color_map.get_hex_color sim["subEraColor"].to_s
+
+      if !era_title.blank? && !sub_era_title.blank?
+        return %(#{era_title.to_s.colorize.fore(era_color)} - #{sub_era_title.to_s.colorize.fore(sub_era_color)}\r\n).colorize.underline.to_s
+      else
+        return ""
+      end
     end
   end
 

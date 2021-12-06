@@ -33,19 +33,26 @@ end
 sockets = Array(Client).new
 
 ENV["STREAM_URL"] ||= "https://api.blaseball.com/events/streamData"
+ENV["SIBR_API_URL"] ||= "https://api.sibr.dev"
 ENV["PORT"] ||= "8023"
 server = TCPServer.new "0.0.0.0", ENV["PORT"].to_i
 
-tx = Channel({String, Hash(String,JSON::Any)}).new
+tx = Channel({String, Hash(String, JSON::Any)}).new
 
-sources = Hash(String,Source).new
+sources = Hash(String, Source).new
 sources["live"] = LiveSource.new ENV["STREAM_URL"], "live", tx
+feed_season_list = JSON.parse((HTTP::Client.get "#{ENV["SIBR_API_URL"]}/chronicler/v2/entities?type=FeedSeasonList").body).as_h
 
-def handle_client(socket : TCPSocket, sockets : Array(Client), sources : Hash(String,Source), tx : Channel({String, Hash(String,JSON::Any)}))
+def handle_client(
+  socket : TCPSocket,
+  sockets : Array(Client),
+  sources : Hash(String, Source),
+  feed_season_list : Hash(String, JSON::Any),
+  tx : Channel({String, Hash(String, JSON::Any)})) : Nil
   begin
     color_map = ColorMap.new "color_data.json"
     colorizer = Colorizer.new color_map
-    default_renderer = DefaultLayout.new colorizer
+    default_renderer = DefaultLayout.new colorizer, feed_season_list
 
     socket << "\x1b[1;1H"   # return cusor to start of page
     socket << "\x1b[0J"     # clear from cursor to the end of the page
@@ -119,7 +126,7 @@ def handle_client(socket : TCPSocket, sockets : Array(Client), sources : Hash(St
           client.renderer.clear_last
         end
       elsif line.starts_with? "stlats"
-        total_clients = sources.each.map { |(k,v)| v.n_clients }.sum
+        total_clients = sources.each.map { |(k, v)| v.n_clients }.sum
         socket << "\x1b[1A\rcurrently connected clients: #{total_clients}"
         socket << "\x1b[10000B"
         socket << "\r"
@@ -138,7 +145,7 @@ end
 
 spawn do
   while socket = server.accept?
-    spawn handle_client(socket,sockets,sources,tx)
+    spawn handle_client(socket, sockets, sources, feed_season_list, tx)
   end
 end
 
