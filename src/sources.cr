@@ -49,7 +49,12 @@ class LiveSource < Source
   end
 
   def apply_patch(patch : JSON::Any)
-    @last_message = Json::Tools::Patch.new(patch).apply(@last_message)
+    begin
+      @last_message = Json::Tools::Patch.new(patch).apply(@last_message)
+    rescue ex
+      puts "error in applying patch"
+      pp ex.inspect_with_backtrace
+    end
   end
 
   def add_client
