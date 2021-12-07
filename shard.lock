@@ -1,5 +1,9 @@
 version: 2.0
 shards:
+  json-tools:
+    git: https://github.com/impatienttraveller/json-tools.git
+    version: 1.0.1
+
   sse:
     git: https://github.com/y2k2mt/sse.cr.git
     version: 0.10.0

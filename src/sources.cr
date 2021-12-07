@@ -1,5 +1,6 @@
 require "json"
 require "sse"
+require "json-tools"
 
 abstract class Source
   abstract def add_client
@@ -10,33 +11,45 @@ end
 
 class LiveSource < Source
   property sse : HTTP::ServerSentEvents::EventSource
-  property last_message : Hash(String,JSON::Any) = Hash(String,JSON::Any).new
-  property tx : Channel({String, Hash(String,JSON::Any)})
+  property last_message : JSON::Any
+  property tx : Channel({String, Hash(String, JSON::Any)})
   property ident : String
   property clients : Int32 = 0
 
-  def initialize(url : String, @ident : String, @tx : Channel({String, Hash(String,JSON::Any)}))
+  def initialize(url : String, @ident : String, @tx : Channel({String, Hash(String, JSON::Any)}))
+    @last_message = JSON.parse(%({"empty": "message"}))
     @sse = HTTP::ServerSentEvents::EventSource.new url
     @sse.on_message do |msg|
       begin
-        @last_message = JSON.parse(msg.data[0])["value"].as_h
-        @tx.send({ @ident, @last_message })
+        parsed_message = JSON.parse(msg.data[0]).as_h
       rescue ex
         begin
-          @last_message = JSON.parse(msg.data[0][8..msg.data[0].size-2]).as_h
-          @tx.send({ @ident, @last_message })
+          parsed_message = JSON.parse(msg.data[0][8..msg.data[0].size-2])
         rescue ex2
-          puts "error in source #{@ident}"
+          puts "error in source #{ident}"
           pp ex.inspect_with_backtrace
           puts "error in SSE formatting workaround"
           pp ex2.inspect_with_backtrace
+          next
         end
+      end
+
+      if parsed_message.has_key? "value"
+        @last_message = parsed_message["value"]
+        @tx.send({@ident, @last_message.as_h})
+      elsif parsed_message.has_key? "delta"
+        apply_patch(parsed_message["delta"])
+        @tx.send({@ident, @last_message.as_h})
       end
     end
 
     spawn do
       @sse.run
     end
+  end
+
+  def apply_patch(patch : JSON::Any)
+    @last_message = Json::Tools::Patch.new(patch).apply(@last_message)
   end
 
   def add_client
@@ -55,7 +68,10 @@ class LiveSource < Source
     @sse.stop
   end
 
-  def last_data
-    @last_message
+  def set_last_message(@last_message)
+  end
+
+  def last_data : Hash(String, JSON::Any)
+    @last_message.as_h
   end
 end
