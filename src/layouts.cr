@@ -59,7 +59,7 @@ class DefaultLayout < Layout
 
   end
 
-  def render(message)
+  def render(message : Hash(String, JSON::Any))
     if message.has_key? "leagues"
       @last_league = message["leagues"].as_h
     end
@@ -71,17 +71,25 @@ class DefaultLayout < Layout
     games = message["games"]
 
     @last_message = String.build do |m|
-      m << "\x1b7"
-      m << "\x1b[1A\x1b[1J"
-      m << "\x1b[1;1H"
-      m << "\x1b[0J"
-      m << %(Day #{games["sim"]["day"].as_i + 1}, Season #{games["sim"]["season"].as_i + 1}).colorize.bold.to_s
+      m << "\x1b7" # bell
+      m << "\x1b[1A\x1b[1J" # move cursor up one, clear from cursor to beginning of screen.
+      m << "\x1b[1;1H" # move cursor to top left of screen
+      m << "\x1b[0J" # clear from cursor to end of screen
+      
+      readable_day = games["sim"]["day"].as_i + 1
+
+      m << %(Day #{readable_day}, Season #{games["sim"]["season"].as_i + 1}).colorize.bold.to_s
       m << "\n\r"
       m << render_season_identifier @colorizer, games.as_h
 
-      games["schedule"].as_a.sort_by {|g| get_team_name g, true}.each do |game|
-        colorizer.current_game = game.as_h
-        m << render_game colorizer, game
+      schedule = games["schedule"].as_a
+      if schedule.size == 0
+        m << "No games for day #{readable_day}"
+      else
+        schedule.sort_by {|g| get_team_name g, true}.each do |game|
+          colorizer.current_game = game.as_h
+          m << render_game colorizer, game
+        end
       end
 
       m << "\x1b8"
@@ -138,9 +146,10 @@ class DefaultLayout < Layout
     home_team_nickname = get_team_nickname(game, false)
     String.build do |m|
       m << "\n\r"
-      m << %(#{colorizer.colorize_string_for_team true, (away_team_name + " (#{game["awayScore"]})")})
+      m << %(#{colorizer.colorize_string_for_team true, away_team_name})
       m << %( #{"@".colorize.underline} )
-      m << %(#{colorizer.colorize_string_for_team false, (home_team_name + " (#{game["homeScore"]})")})
+      m << %(#{colorizer.colorize_string_for_team false, home_team_name})
+      m << %{ (#{colorizer.colorize_string_for_team true, game["awayScore"].to_s} v #{colorizer.colorize_string_for_team false, game["homeScore"].to_s})}
       m << "\n\r"
       m << %(#{game["topOfInning"].as_bool ? "Top of the" : "Bottom of the"} #{make_ord game["inning"].as_i+1}).colorize.bold
 
@@ -162,6 +171,77 @@ class DefaultLayout < Layout
         end
         m << "\n\r"
       else
+        if game["topOfInning"].as_bool?
+          max_balls = game["awayBalls"].as_i?
+          max_strikes = game["awayStrikes"].as_i?
+          max_outs = game["awayOuts"].as_i?
+          number_of_bases_including_home = game["awayBases"].as_i?
+        else
+          max_balls = game["homeBalls"].as_i?
+          max_strikes = game["homeStrikes"].as_i?
+          max_outs = game["awayOuts"].as_i?
+          number_of_bases_including_home = game["homeBases"].as_i?
+        end
+
+        m << game["atBatBalls"]
+        if max_balls && max_balls != 4
+          m << %( (of #{max_balls}))
+        end
+
+        m << "-"
+
+        m << game["atBatStrikes"]
+        if max_strikes && max_strikes != 3
+          m << %( (of #{max_strikes}))
+        end
+
+        bases_occupied = game["basesOccupied"].as_a
+        if bases_occupied.size == 0
+          m << ". Nobody on"
+        else
+          bases_occupied = bases_occupied.map {|b| b.as_i}
+          m << ". #{bases_occupied.size} on ("
+          
+          number_bases = bases_occupied.max
+          if number_of_bases_including_home && number_bases < number_of_bases_including_home
+            number_bases = number_of_bases_including_home
+          end
+          if number_bases < 4
+            number_bases = 4
+          end
+
+          bases = Array.new(number_bases - 1, 0)
+          bases_occupied.each do |b|
+            bases[b] += 1
+          end
+
+          bases.reverse.each do |b|
+            if b == 0
+              m << "\u{25cb}"
+            elsif b == 1
+              m << "\u{25cf}"
+            else
+              m << b.to_s
+            end
+          end
+
+          m << ")"
+        end
+          
+        number_of_outs = game["halfInningOuts"]
+        if number_of_outs == 0
+          m << ", no outs"
+        elsif number_of_outs == 1
+          m << ", 1 out"
+        else
+          m << ", #{number_of_outs} outs"
+        end
+
+        if max_outs && max_outs != 3
+          m << %( (of #{max_outs}))
+        end
+        m << ".\r\n"
+
         m << make_newlines(game["lastUpdate"].as_s)
       end
     end
@@ -188,6 +268,46 @@ class DefaultLayout < Layout
         return ""
       end
     end
+  end
+
+  def render_temporal(
+    colorizer : Colorizer,
+    temporal : Hash(String, JSON::Any)) : String
+    #alpha: number = number of peanuts that can be purchased
+    #beta: number = squirrel count
+    #gamma: number = entity id
+    #delta: boolean = sponsor in store?
+    #epsilon: boolean = is site takeover in process
+    #zeta: string = actual output text
+
+    if temporal.has_key? "doc"
+      entity : Int32 = temporal["doc"]["gamma"].as_i
+      zeta : String = make_newlines temporal["doc"]["zeta"].as_s
+      if !zeta.blank?
+        if @entities.entities_40.has_key? entity
+          return "#{@entities.entities_40[entity]}#{zeta}"
+        end
+        return "#{@entities.entities_40[-1]}#{zeta}"
+      end
+    end
+    return ""
+  end
+
+  def is_takeover_in_process : Bool
+    if @last_temporal.has_key? "doc"
+      if @last_temporal["doc"]["epsilon"]?
+        return @last_temporal["doc"]["epsilon"].as_bool
+      end
+    end
+    return false
+  end
+
+  def render_temporal_alert(
+    message : String) : String
+    if message.starts_with? "Please Wait."
+      return message[..1] << ".".mode(:blink)
+    end
+    return message
   end
 
   def clear_last : Nil
