@@ -7,16 +7,16 @@ def make_ord(number : Number) : String
   end
 
   number.to_s +
-  case number.to_s[-1]
-  when '1'
-    "st"
-  when '2'
-    "nd"
-  when '3'
-    "rd"
-  else
-    "th"
-  end
+    case number.to_s[-1]
+    when '1'
+      "st"
+    when '2'
+      "nd"
+    when '3'
+      "rd"
+    else
+      "th"
+    end
 end
 
 def make_newlines(input : String) : String
@@ -32,18 +32,20 @@ end
 
 class Colorizer
   property color_map : ColorMap
-  property current_game : Hash(String,JSON::Any)
-  def initialize(@color_map, @current_game = Hash(String,JSON::Any).new)
+  property current_game : Hash(String, JSON::Any)
+
+  def initialize(@color_map, @current_game = Hash(String, JSON::Any).new)
   end
 
   def colorize_string_for_team(
-      away? : Bool,
-      string : String) : String
+    away? : Bool,
+    string : String
+  ) : String
     string
-    .colorize
-    .bold
-    .fore(@color_map.get_hex_color @current_game[away? ? "awayTeamColor" : "homeTeamColor"].as_s)
-    .to_s
+      .colorize
+      .bold
+      .fore(@color_map.get_hex_color @current_game[away? ? "awayTeamColor" : "homeTeamColor"].as_s)
+      .to_s
   end
 end
 
@@ -55,42 +57,39 @@ end
 
 class DefaultLayout < Layout
   property last_message : String = ""
-  property last_league : Hash(String,JSON::Any) = Hash(String,JSON::Any).new
+  property last_league : Hash(String, JSON::Any) = Hash(String, JSON::Any).new
   property colorizer : Colorizer
-  property feed_season_list : Hash(String,JSON::Any)
+  property feed_season_list : Hash(String, JSON::Any)
 
   def initialize(@colorizer, @feed_season_list)
-
   end
 
-  def render(message : Hash(String, JSON::Any))
-    if message.has_key? "leagues"
-      @last_league = message["leagues"].as_h
+  def render(message : SourceData)
+    message.leagues.try do |leagues|
+      @last_league = leagues
     end
 
-    if !message.has_key? "games"
+    if message.games.nil? || message.sim.nil?
       return @last_message
     end
 
-    games = message["games"]
-
     @last_message = String.build do |m|
-      m << "\x1b7" # bell
+      m << "\x1b7"          # bell
       m << "\x1b[1A\x1b[1J" # move cursor up one, clear from cursor to beginning of screen.
-      m << "\x1b[1;1H" # move cursor to top left of screen
-      m << "\x1b[0J" # clear from cursor to end of screen
-      
-      readable_day = games["sim"]["day"].as_i + 1
+      m << "\x1b[1;1H"      # move cursor to top left of screen
+      m << "\x1b[0J"        # clear from cursor to end of screen
 
-      m << %(Day #{readable_day}, Season #{games["sim"]["season"].as_i + 1}).colorize.bold.to_s
+      sim = message.sim.not_nil!
+      readable_day = sim["day"].as_i + 1
+
+      m << %(Day #{readable_day}, Season #{sim["season"].as_i + 1}).colorize.bold.to_s
       m << "\n\r"
-      m << render_season_identifier @colorizer, games.as_h
+      m << render_season_identifier @colorizer, message
 
-      schedule = games["schedule"].as_a
-      if schedule.size == 0
+      if message.games == 0
         m << "No games for day #{readable_day}"
       else
-        schedule.sort_by {|g| get_team_name g, true}.each do |game|
+        message.games.not_nil!.sort_by { |g| get_team_name g, true }.each do |game|
           colorizer.current_game = game.as_h
           m << render_game colorizer, game
         end
@@ -103,23 +102,26 @@ class DefaultLayout < Layout
   end
 
   def get_team_name(
-      game : JSON::Any,
-      away : Bool) : String
+    game : JSON::Any,
+    away : Bool
+  ) : String
     get_team_identifier game, away, "awayTeamName", "homeTeamName", "fullName"
   end
 
   def get_team_nickname(
-      game : JSON::Any,
-      away : Bool) : String
+    game : JSON::Any,
+    away : Bool
+  ) : String
     get_team_identifier game, away, "awayTeamNickname", "homeTeamNickname", "nickname"
   end
 
   def get_team_identifier(
-      game : JSON::Any,
-      away : Bool,
-      away_game_identifier : String,
-      home_game_identifier : String,
-      identifier : String) : String
+    game : JSON::Any,
+    away : Bool,
+    away_game_identifier : String,
+    home_game_identifier : String,
+    identifier : String
+  ) : String
     if @last_league.has_key? "teams"
       target_team_id = away ? game["awayTeam"] : game["homeTeam"]
       last_league["teams"].as_a.each do |team_json|
@@ -142,8 +144,9 @@ class DefaultLayout < Layout
   end
 
   def render_game(
-      colorizer : Colorizer,
-      game : JSON::Any) : String
+    colorizer : Colorizer,
+    game : JSON::Any
+  ) : String
     away_team_name = get_team_name(game, true)
     home_team_name = get_team_name(game, false)
     away_team_nickname = get_team_nickname(game, true)
@@ -155,7 +158,7 @@ class DefaultLayout < Layout
       m << %(#{colorizer.colorize_string_for_team false, home_team_name})
       m << %{ (#{colorizer.colorize_string_for_team true, game["awayScore"].to_s} v #{colorizer.colorize_string_for_team false, game["homeScore"].to_s})}
       m << "\n\r"
-      m << %(#{game["topOfInning"].as_bool ? "Top of the" : "Bottom of the"} #{make_ord game["inning"].as_i+1}).colorize.bold
+      m << %(#{game["topOfInning"].as_bool ? "Top of the" : "Bottom of the"} #{make_ord game["inning"].as_i + 1}).colorize.bold
 
       if game["topOfInning"].as_bool
         m << %( - #{colorizer.colorize_string_for_team false, game["homePitcherName"].to_s} pitching)
@@ -203,9 +206,9 @@ class DefaultLayout < Layout
         if bases_occupied.size == 0
           m << ". Nobody on"
         else
-          bases_occupied = bases_occupied.map {|b| b.as_i}
+          bases_occupied = bases_occupied.map { |b| b.as_i }
           m << ". #{bases_occupied.size} on ("
-          
+
           number_bases = bases_occupied.max
           if number_of_bases_including_home && number_bases < number_of_bases_including_home
             number_bases = number_of_bases_including_home
@@ -231,7 +234,7 @@ class DefaultLayout < Layout
 
           m << ")"
         end
-          
+
         number_of_outs = game["halfInningOuts"]
         if number_of_outs == 0
           m << ", no outs"
@@ -253,8 +256,9 @@ class DefaultLayout < Layout
 
   def render_season_identifier(
     colorizer : Colorizer,
-    games : Hash(String, JSON::Any)) : String
-    sim = games["sim"]
+    message : SourceData
+  ) : String
+    sim = message.sim.not_nil!
     id = sim["id"].to_s
 
     if id != "thisidisstaticyo"
@@ -276,13 +280,14 @@ class DefaultLayout < Layout
 
   def render_temporal(
     colorizer : Colorizer,
-    temporal : Hash(String, JSON::Any)) : String
-    #alpha: number = number of peanuts that can be purchased
-    #beta: number = squirrel count
-    #gamma: number = entity id
-    #delta: boolean = sponsor in store?
-    #epsilon: boolean = is site takeover in process
-    #zeta: string = actual output text
+    temporal : Hash(String, JSON::Any)
+  ) : String
+    # alpha: number = number of peanuts that can be purchased
+    # beta: number = squirrel count
+    # gamma: number = entity id
+    # delta: boolean = sponsor in store?
+    # epsilon: boolean = is site takeover in process
+    # zeta: string = actual output text
 
     if temporal.has_key? "doc"
       entity : Int32 = temporal["doc"]["gamma"].as_i
@@ -307,7 +312,8 @@ class DefaultLayout < Layout
   end
 
   def render_temporal_alert(
-    message : String) : String
+    message : String
+  ) : String
     if message.starts_with? "Please Wait."
       return message[..1] << ".".mode(:blink)
     end
