@@ -2,6 +2,10 @@ require "colorize"
 color_map = ColorMap.new "color_data.json"
 
 def make_ord(number : Number) : String
+  if number > 10 && number.to_s[-2] == '1'
+    return "#{number}th"
+  end
+
   number.to_s +
   case number.to_s[-1]
   when '1'
