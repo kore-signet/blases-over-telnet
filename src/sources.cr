@@ -2,6 +2,8 @@ require "json"
 require "sse"
 require "json-tools"
 
+CHRONICLER_URL = URI.parse(ENV["CHRONICLER_URL"] ||= "https://api.sibr.dev/chronicler/")
+
 class SourceData
   property temporal : Hash(String, JSON::Any)? = nil
   property games : Array(JSON::Any)? = nil
@@ -62,12 +64,15 @@ class LiveSource < Source
 
       if parsed_message.has_key? "value"
         @last_message = parsed_message["value"]
+
+        @current_data.from_stream @last_message
+        @tx.send({@ident, @current_data})
       elsif parsed_message.has_key? "delta"
         apply_patch(parsed_message["delta"])
-      end
 
-      @current_data.from_stream @last_message
-      @tx.send({@ident, @current_data})
+        @current_data.from_stream @last_message
+        @tx.send({@ident, @current_data})
+      end
     end
 
     spawn do
@@ -153,8 +158,12 @@ class ChroniclerSource < Source
   end
 
   def fetch_messages
-    params = URI::Params.encode({"type" => "Stream", "count" => "30", "order" => "asc", "after" => @last_time.to_rfc3339})
-    response = HTTP::Client.get URI.new(scheme: "https", host: "api.sibr.dev", path: "/chronicler/v2/versions", query: params)
+    url = CHRONICLER_URL
+    url.query = URI::Params.encode({"type" => "Stream", "count" => "30", "order" => "asc", "after" => @last_time.to_rfc3339})
+    url.path = (Path.new(url.path) / "v2" / "versions").to_s
+
+    response = HTTP::Client.get url
+
     messages = JSON.parse response.body
     @cached_messages = messages["items"].as_a.select { |v| !v["data"]["value"]?.nil? }.map do |v|
       {
