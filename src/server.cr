@@ -7,9 +7,8 @@ require "./sources.cr"
 require "./layouts.cr"
 require "./color_diff.cr"
 require "./help.cr"
+
 #
-
-
 class Client
   property renderer : Layout
   property source : String
@@ -37,7 +36,7 @@ ENV["SIBR_API_URL"] ||= "https://api.sibr.dev"
 ENV["PORT"] ||= "8023"
 server = TCPServer.new "0.0.0.0", ENV["PORT"].to_i
 
-tx = Channel({String, Hash(String, JSON::Any)}).new
+tx = Channel({String, SourceData}).new
 
 sources = Hash(String, Source).new
 sources["live"] = LiveSource.new ENV["STREAM_URL"], "live", tx
@@ -48,7 +47,8 @@ def handle_client(
   sockets : Array(Client),
   sources : Hash(String, Source),
   feed_season_list : Hash(String, JSON::Any),
-  tx : Channel({String, Hash(String, JSON::Any)})) : Nil
+  tx : Channel({String, SourceData})
+) : Nil
   begin
     color_map = ColorMap.new "color_data.json"
     colorizer = Colorizer.new color_map
@@ -82,20 +82,19 @@ def handle_client(
           client.renderer.clear_last
 
           if !sources.has_key? "replay:#{timestamp}"
-            sources["replay:#{timestamp}"] = LiveSource.new "https://api.sibr.dev/replay/v1/replay?from=#{Time::Format::ISO_8601_DATE_TIME.format timestamp}", "replay:#{timestamp}", tx
+            sources["replay:#{timestamp}"] = ChroniclerSource.new timestamp, "replay:#{timestamp}", tx
           end
 
           sources[client.source].rm_client
           sources["replay:#{timestamp}"].add_client
 
           client.source = "replay:#{timestamp}"
-          
+
           socket << "\x1b[1;1H"
           socket << "\x1b[0J"
           socket << "remembering before...".colorize.red.bold
           socket << "\x1b[10000B"
           socket << "\r"
-
         rescue ex
           pp ex.inspect_with_backtrace
           socket << "invalid timestamp"
