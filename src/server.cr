@@ -7,8 +7,6 @@ require "./sources.cr"
 require "./layouts.cr"
 require "./color_diff.cr"
 require "./help.cr"
-#
-
 
 class Client
   property renderer : Layout
@@ -48,15 +46,16 @@ def handle_client(
   sockets : Array(Client),
   sources : Hash(String, Source),
   feed_season_list : Hash(String, JSON::Any),
-  tx : Channel({String, Hash(String, JSON::Any)})) : Nil
+  tx : Channel({String, Hash(String, JSON::Any)})
+) : Nil
   begin
     color_map = ColorMap.new "color_data.json"
     colorizer = Colorizer.new color_map
     default_renderer = DefaultLayout.new colorizer, feed_season_list
 
-    socket << "\x1b[1;1H"   # return cusor to start of page
-    socket << "\x1b[0J"     # clear from cursor to the end of the page
-    socket << "\x1b[10000E" # move cursor down and to start of line
+    # socket << "\x1b[1;1H"   # return cusor to start of page
+    # socket << "\x1b[0J"     # clear from cursor to the end of the page
+    # socket << "\x1b[10000E" # move cursor down and to start of line
 
     client = Client.new default_renderer, socket, "live"
     sockets << client
@@ -89,13 +88,12 @@ def handle_client(
           sources["replay:#{timestamp}"].add_client
 
           client.source = "replay:#{timestamp}"
-          
+
           socket << "\x1b[1;1H"
           socket << "\x1b[0J"
           socket << "remembering before...".colorize.red.bold
           socket << "\x1b[10000B"
           socket << "\r"
-
         rescue ex
           pp ex.inspect_with_backtrace
           socket << "invalid timestamp"

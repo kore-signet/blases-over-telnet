@@ -24,7 +24,7 @@ class LiveSource < Source
         parsed_message = JSON.parse(msg.data[0]).as_h
       rescue ex
         begin
-          parsed_message = JSON.parse(msg.data[0][8..msg.data[0].size-2])
+          parsed_message = JSON.parse(msg.data[0][8..msg.data[0].size - 2])
         rescue ex2
           puts "error in source #{ident}"
           pp ex.inspect_with_backtrace

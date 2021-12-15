@@ -13,8 +13,8 @@ describe "layout" do
       layout = get_layout()
       it "should render an empty string" do
         unrelated_json = %{{"nextPage":"AAAAAAAAAAAAAAAAAAAAAGgEF1-1EQEA","items":[{"entityId":"00000000-0000-0000-0000-000000000000","hash":"6d1a1be6-adaa-69c1-6be6-131d44a0d28f","validFrom":"2021-06-14T07:36:05.88074Z","validTo":"2021-06-14T15:03:01.002066Z","data":{"current":0,"maximum":99999,"recharge":26244}}]}}
-        message : Hash(String,JSON::Any) = JSON.parse(unrelated_json)["items"][0].as_h
-  
+        message : Hash(String, JSON::Any) = JSON.parse(unrelated_json)["items"][0].as_h
+
         output : String = layout.render message
 
         output.blank?.should be_true
@@ -23,17 +23,17 @@ describe "layout" do
 
     describe "games, no temporal" do
       layout = get_layout()
-      message : Hash(String,JSON::Any) = JSON.parse(File.read("spec/games.json")).as_h
+      message : Hash(String, JSON::Any) = JSON.parse(File.read("spec/games.json")).as_h
 
       output : String = layout.render message
 
       it "should not be blank" do
-        output.blank?.should be_false   
+        output.blank?.should be_false
       end
 
       it "should be expected" do
         # gross hardcoding but i can't work out how to get reading from files to work
-        # keeps escaping things :/ 
+        # keeps escaping things :/
         expected : String = "\x1b7\x1b[1A\x1b[1J\x1b[1;1H\x1b[0J\x1b[1mDay 58, Season 24\x1b[0m\n\r" \
         "\x1b[4m\x1b[38;5;214mTHE EXPANSION ERA\x1b[0m - \x1b[38;5;74mSAVE SITUATION\x1b[0m\x1b[0m\n\r" \
         "\n\r" \
@@ -91,7 +91,7 @@ describe "layout" do
   end
 end
 
-def get_layout()
+def get_layout
   color_map = ColorMap.new "color_data.json"
   colorizer = Colorizer.new color_map
   layout = DefaultLayout.new colorizer

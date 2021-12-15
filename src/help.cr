@@ -1,7 +1,7 @@
 require "socket"
 require "colorize"
-#
 
+#
 
 def show_help(socket : TCPSocket, query : String)
   socket << "blases over telnet - help\r\n"
@@ -20,6 +20,6 @@ def show_help(socket : TCPSocket, query : String)
   socket << "\tresume\r\n"
   socket << "\t  resumes writing live updates to your screen"
   socket << "\x1b[10000E" # goto end of page
-  socket << "\x1b[1F" # go back up a line
+  socket << "\x1b[1F"     # go back up a line
   socket << "type 'resume' to return to the feed\r\n"
 end
