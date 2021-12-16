@@ -89,7 +89,7 @@ class DefaultLayout < Layout
       if message.games == 0
         m << "No games for day #{readable_day}"
       else
-        message.games.not_nil!.sort_by { |g| get_team_name g, true }.each do |game|
+        message.games.not_nil!.sort_by { |g| get_team_ordering g }.each do |game|
           colorizer.current_game = game.as_h
           m << render_game colorizer, game
         end
@@ -104,11 +104,14 @@ class DefaultLayout < Layout
   def get_team_ordering(
     game : JSON::Any
   ) : String
-    team_name = get_team_name game, true
-    if team_name == "nullteam"
-      get_team_name game, false
+    away_team_name = get_team_name game, true
+    home_team_name = get_team_name game, false
+    if away_team_name == "nullteam"
+      return "ZZZ#{home_team_name}"
+    elsif home_team_name == "nullteam"
+      return "ZZZ#{away_team_name}"
     end
-    return team_name
+    return away_team_name
   end
 
   def get_team_name(
