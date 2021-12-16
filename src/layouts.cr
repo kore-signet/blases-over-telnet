@@ -30,6 +30,19 @@ def make_newlines(input : String) : String
   return result
 end
 
+def move_lines(input : String, column : Int, row : Int) : Tuple(String, Int32)
+  line_break_regex = /(\r\n|\n\r)/
+  result = "\x1b[#{row};#{column}H#{input}"
+  row += 1
+  regex_match = input.match(line_break_regex)
+  while regex_match
+    result = result.sub(line_break_regex, "\x1b[#{row};#{column}H")
+    row += 1
+    regex_match = result.match(line_break_regex)
+  end
+  return {result, row}
+end
+
 class Colorizer
   property color_map : ColorMap
   property current_game : Hash(String, JSON::Any)
@@ -76,11 +89,11 @@ class DefaultLayout < Layout
     games = message["games"]
 
     @last_message = String.build do |m|
-      m << "\x1b7" # bell
+      m << "\x1b7"          # bell
       m << "\x1b[1A\x1b[1J" # move cursor up one, clear from cursor to beginning of screen.
-      m << "\x1b[1;1H" # move cursor to top left of screen
-      m << "\x1b[0J" # clear from cursor to end of screen
-      
+      m << "\x1b[1;1H"      # move cursor to top left of screen
+      m << "\x1b[0J"        # clear from cursor to end of screen
+
       readable_day = games["sim"]["day"].as_i + 1
 
       m << %(Day #{readable_day}, Season #{games["sim"]["season"].as_i + 1}).colorize.bold.to_s
@@ -91,9 +104,17 @@ class DefaultLayout < Layout
       if schedule.size == 0
         m << "No games for day #{readable_day}"
       else
-        schedule.sort_by {|g| get_team_name g, true}.each do |game|
+        column_width = 85
+        number_of_columns = 2
+        current_row_for_column = Array.new(number_of_columns, 4)
+        column = 0
+
+        schedule.sort_by { |g| get_team_name g, true }.each do |game|
           colorizer.current_game = game.as_h
-          m << render_game colorizer, game
+          game_string = render_game colorizer, game
+          game_string, current_row_for_column[column] = move_lines(game_string, column * column_width, current_row_for_column[column])
+          column = (column + 1) % number_of_columns
+          m << game_string
         end
       end
 
