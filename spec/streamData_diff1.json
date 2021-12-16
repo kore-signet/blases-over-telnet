@@ -1,0 +1,470 @@
+{
+  "delta": [
+    {
+      "op": "replace",
+      "path": "/games/schedule/8/lastUpdateFull/0/created",
+      "value": "2021-12-06T19:07:27.984Z"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/8/lastUpdateFull/0/description",
+      "value": "Göran Muffins hit a ground out to Felicity Winkle."
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/8/lastUpdateFull/0/type",
+      "value": 8
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/8/lastUpdateFull/0/id",
+      "value": "fc975a95-4fa7-413b-81d3-a97f9ce608cf"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/8/playCount",
+      "value": 90
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/8/atBatBalls",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/8/halfInningOuts",
+      "value": 1
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/8/awayBatterName",
+      "value": ""
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/8/awayBatter",
+      "value": null
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/8/lastUpdate",
+      "value": "Göran Muffins hit a ground out to Felicity Winkle.\n"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/7/lastUpdateFull/0/created",
+      "value": "2021-12-06T19:07:27.968Z"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/7/lastUpdateFull/0/description",
+      "value": "Benji Charcuterie batting for the Worms."
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/7/lastUpdateFull/0/type",
+      "value": 12
+    },
+    {
+      "op": "add",
+      "path": "/games/schedule/7/lastUpdateFull/0/playerTags/0",
+      "value": "abebe201-b03e-405e-8782-2ebccdede915"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/7/lastUpdateFull/0/id",
+      "value": "d67848ec-0f01-47d3-9fff-5ddbe9a3d95a"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/7/playCount",
+      "value": 90
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/7/atBatStrikes",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/7/halfInningOuts",
+      "value": 2
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/7/awayTeamBatterCount",
+      "value": 11
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/7/awayBatterName",
+      "value": "Benji Charcuterie"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/7/awayBatter",
+      "value": "abebe201-b03e-405e-8782-2ebccdede915"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/7/lastUpdate",
+      "value": "Benji Charcuterie batting for the Worms.\n"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/6/lastUpdateFull/0/created",
+      "value": "2021-12-06T19:07:27.538Z"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/6/lastUpdateFull/0/description",
+      "value": "Strike, looking. 0-1"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/6/lastUpdateFull/0/type",
+      "value": 13
+    },
+    {
+      "op": "remove",
+      "path": "/games/schedule/6/lastUpdateFull/0/playerTags/0"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/6/lastUpdateFull/0/id",
+      "value": "c0925a94-769f-4815-89fd-d19adcf2b98d"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/6/playCount",
+      "value": 88
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/6/atBatStrikes",
+      "value": 1
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/6/homeTeamBatterCount",
+      "value": 8
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/6/homeBatterName",
+      "value": "Juan Goldsberry"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/6/homeBatter",
+      "value": "27e26099-72ba-4f8b-960e-6417c8c950d2"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/6/lastUpdate",
+      "value": "Strike, looking. 0-1\n"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/5/lastUpdateFull/0/created",
+      "value": "2021-12-06T19:07:27.786Z"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/5/lastUpdateFull/0/description",
+      "value": "Almond Devi strikes out swinging."
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/5/lastUpdateFull/0/type",
+      "value": 6
+    },
+    {
+      "op": "add",
+      "path": "/games/schedule/5/lastUpdateFull/0/playerTags/0",
+      "value": "5c6ff5a1-b61f-4878-a900-5432a5193fb6"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/5/lastUpdateFull/0/id",
+      "value": "0a753a4f-2345-420e-95e3-8c7477e9e473"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/5/playCount",
+      "value": 89
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/5/atBatStrikes",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/5/atBatBalls",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/5/halfInningOuts",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/5/phase",
+      "value": 3
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/5/awayBatterName",
+      "value": ""
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/5/awayBatter",
+      "value": null
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/5/lastUpdate",
+      "value": "Almond Devi strikes out swinging.\n"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/4/lastUpdateFull/0/created",
+      "value": "2021-12-06T19:07:27.589Z"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/4/lastUpdateFull/0/description",
+      "value": "Navani Biscuits strikes out looking."
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/4/lastUpdateFull/0/type",
+      "value": 6
+    },
+    {
+      "op": "add",
+      "path": "/games/schedule/4/lastUpdateFull/0/playerTags/0",
+      "value": "e4820c04-cd15-4024-be20-7da978136e4f"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/4/lastUpdateFull/0/id",
+      "value": "5815e080-2650-4118-87f0-7f9fd6e1ab99"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/4/playCount",
+      "value": 88
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/4/atBatStrikes",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/4/halfInningOuts",
+      "value": 1
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/4/awayBatterName",
+      "value": ""
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/4/awayBatter",
+      "value": null
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/4/lastUpdate",
+      "value": "Navani Biscuits strikes out looking.\n"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/3/lastUpdateFull/0/created",
+      "value": "2021-12-06T19:07:27.952Z"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/3/lastUpdateFull/0/description",
+      "value": "Ball. 1-1"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/3/lastUpdateFull/0/type",
+      "value": 14
+    },
+    {
+      "op": "remove",
+      "path": "/games/schedule/3/lastUpdateFull/0/playerTags/0"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/3/lastUpdateFull/0/id",
+      "value": "c2cebfbc-562c-40fe-861a-93fd7e7ed5da"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/3/playCount",
+      "value": 90
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/3/atBatStrikes",
+      "value": 1
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/3/atBatBalls",
+      "value": 1
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/3/lastUpdate",
+      "value": "Ball. 1-1\n"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/2/lastUpdateFull/0/created",
+      "value": "2021-12-06T19:07:27.455Z"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/2/lastUpdateFull/0/description",
+      "value": "Bottom of 3, Core Mechanics batting."
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/2/lastUpdateFull/0/type",
+      "value": 2
+    },
+    {
+      "op": "remove",
+      "path": "/games/schedule/2/lastUpdateFull/0/playerTags/0"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/2/lastUpdateFull/0/id",
+      "value": "67edbade-03ec-410f-b100-cd1fab8e5899"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/2/playCount",
+      "value": 87
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/2/topOfInning",
+      "value": false
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/2/phase",
+      "value": 6
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/2/lastUpdate",
+      "value": "Bottom of 3, Core Mechanics batting.\n"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/1/lastUpdateFull/0/created",
+      "value": "2021-12-06T19:07:27.604Z"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/1/lastUpdateFull/0/description",
+      "value": "Strike, swinging. 0-1"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/1/lastUpdateFull/0/type",
+      "value": 13
+    },
+    {
+      "op": "remove",
+      "path": "/games/schedule/1/lastUpdateFull/0/playerTags/0"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/1/lastUpdateFull/0/id",
+      "value": "abb1bfb0-9899-4f3f-9772-5c569a1e9b2c"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/1/playCount",
+      "value": 88
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/1/atBatStrikes",
+      "value": 1
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/1/homeTeamBatterCount",
+      "value": 5
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/1/homeBatterName",
+      "value": "Ingrid Million"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/1/homeBatter",
+      "value": "65366cc1-3f67-4b05-bf4b-60864670c238"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/1/lastUpdate",
+      "value": "Strike, swinging. 0-1\n"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/0/lastUpdateFull/0/created",
+      "value": "2021-12-06T19:07:27.935Z"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/0/lastUpdateFull/0/description",
+      "value": "Bottom of 3, Charleston Shoe Thieves batting."
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/0/lastUpdateFull/0/type",
+      "value": 2
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/0/lastUpdateFull/0/id",
+      "value": "a7047ab9-2d26-4404-8a4f-ab79127be9c3"
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/0/playCount",
+      "value": 90
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/0/topOfInning",
+      "value": false
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/0/phase",
+      "value": 6
+    },
+    {
+      "op": "replace",
+      "path": "/games/schedule/0/lastUpdate",
+      "value": "Bottom of 3, Charleston Shoe Thieves batting.\n"
+    }
+  ]
+}
