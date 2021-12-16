@@ -1,4 +1,5 @@
 require "spec"
+require "../src/color_diff.cr"
 require "../src/layouts.cr"
 
 describe "make ord" do
