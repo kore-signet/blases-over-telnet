@@ -3,30 +3,31 @@ color_map = ColorMap.new "color_data.json"
 
 def make_ord(number)
   number.to_s +
-  case number.to_s[-1]
-  when '1'
-    "st"
-  when '2'
-    "nd"
-  when '3'
-    "rd"
-  else
-    "th"
-  end
+    case number.to_s[-1]
+    when '1'
+      "st"
+    when '2'
+      "nd"
+    when '3'
+      "rd"
+    else
+      "th"
+    end
 end
 
 class Colorizer
   property color_map : ColorMap
-  property current_game : Hash(String,JSON::Any)
-  def initialize(@color_map, @current_game = Hash(String,JSON::Any).new)
+  property current_game : Hash(String, JSON::Any)
+
+  def initialize(@color_map, @current_game = Hash(String, JSON::Any).new)
   end
 
   def colorize(away?, string)
     string
-    .colorize
-    .bold
-    .fore(@color_map.get_hex_color @current_game[away? ? "awayTeamColor" : "homeTeamColor"].as_s)
-    .to_s
+      .colorize
+      .bold
+      .fore(@color_map.get_hex_color @current_game[away? ? "awayTeamColor" : "homeTeamColor"].as_s)
+      .to_s
   end
 end
 
@@ -38,11 +39,10 @@ end
 
 class DefaultLayout < Layout
   property last_message : String = ""
-  property last_league : Hash(String,JSON::Any) = Hash(String,JSON::Any).new
+  property last_league : Hash(String, JSON::Any) = Hash(String, JSON::Any).new
   property colorizer : Colorizer
 
   def initialize(@colorizer)
-
   end
 
   def render(message)
@@ -66,7 +66,7 @@ class DefaultLayout < Layout
       m << %(#{games["sim"]["eraTitle"].to_s.colorize.fore(@colorizer.color_map.get_hex_color games["sim"]["eraColor"].to_s)} - #{games["sim"]["subEraTitle"].to_s.colorize.fore(@colorizer.color_map.get_hex_color games["sim"]["subEraColor"].to_s)}).colorize.underline.to_s
       m << "\n\r"
 
-      games["schedule"].as_a.sort_by {|g| get_team_name g, true}.each do |game|
+      games["schedule"].as_a.sort_by { |g| get_team_name g, true }.each do |game|
         colorizer.current_game = game.as_h
         m << render_game colorizer, game
       end
@@ -77,7 +77,9 @@ class DefaultLayout < Layout
     @last_message
   end
 
-  def get_team_ordering(game : JSON::Any)
+  def get_team_ordering(
+    game : JSON::Any
+  ) : String
     team_name = get_team_name game, true
     if team_name == "nullteam"
       get_team_name game, false
@@ -85,15 +87,27 @@ class DefaultLayout < Layout
     return team_name
   end
 
-  def get_team_name(game : JSON::Any, away : Bool)
+  def get_team_name(
+    game : JSON::Any,
+    away : Bool
+  ) : String
     get_team_identifier game, away, "awayTeamName", "homeTeamName", "fullName"
   end
 
-  def get_team_nickname(game : JSON::Any, away : Bool)
+  def get_team_nickname(
+    game : JSON::Any,
+    away : Bool
+  ) : String
     get_team_identifier game, away, "awayTeamNickname", "homeTeamNickname", "nickname"
   end
 
-  def get_team_identifier(game : JSON::Any, away : Bool, away_game_identifier : String, home_game_identifier : String, identifier : String)
+  def get_team_identifier(
+    game : JSON::Any,
+    away : Bool,
+    away_game_identifier : String,
+    home_game_identifier : String,
+    identifier : String
+  ) : String
     if @last_league.has_key? "teams"
       target_team_id = away ? game["awayTeam"] : game["homeTeam"]
       last_league["teams"].as_a.each do |team_json|
@@ -115,7 +129,7 @@ class DefaultLayout < Layout
     end
   end
 
-  def render_game(colorizer,game)
+  def render_game(colorizer, game)
     away_team_name = get_team_name(game, true)
     home_team_name = get_team_name(game, false)
     away_team_nickname = get_team_nickname(game, true)
@@ -124,7 +138,7 @@ class DefaultLayout < Layout
       m << "\n\r"
       m << %(#{colorizer.colorize true, (away_team_name + " (#{game["awayScore"]})")} #{"@".colorize.underline} #{colorizer.colorize false, (home_team_name + " (#{game["homeScore"]})")})
       m << "\n\r"
-      m << %(#{game["topOfInning"].as_bool ? "Top of the" : "Bottom of the"} #{make_ord game["inning"].as_i+1}).colorize.bold
+      m << %(#{game["topOfInning"].as_bool ? "Top of the" : "Bottom of the"} #{make_ord game["inning"].as_i + 1}).colorize.bold
 
       if game["topOfInning"].as_bool
         m << %( - #{colorizer.colorize false, game["homePitcherName"].to_s} pitching)
