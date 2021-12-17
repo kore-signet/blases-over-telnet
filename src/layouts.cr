@@ -249,7 +249,11 @@ class DefaultLayout < Layout
         end
         m << ".\r\n"
 
-        m << make_newlines(game["lastUpdate"].as_s)
+        last_update = make_newlines(game["lastUpdate"].as_s)
+        m << last_update
+        if !last_update.ends_with?("\r\n")
+          m << "\r\n"
+        end
       end
     end
   end

@@ -164,9 +164,15 @@ while data = tx.receive?
     end
   end
 
-  if data[0] != "live" && sources[data[0]].n_clients < 1
-    sources[data[0]].close
-    sources.delete data[0]
+  if data[0] != "live"
+    begin
+      if sources[data[0]].n_clients < 1
+        sources[data[0]].close
+        sources.delete data[0]
+      end
+    rescue ex
+      pp ex.inspect_with_backtrace
+    end
   end
 
   sockets -= to_delete
