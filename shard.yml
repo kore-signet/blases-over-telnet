@@ -4,5 +4,5 @@ version: 0.2.0
 dependencies:
   sse:
     github: y2k2mt/sse.cr
-  json-tools: 
+  json-tools:
     github: impatienttraveller/json-tools
