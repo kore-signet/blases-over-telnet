@@ -287,15 +287,15 @@ class DefaultLayout < Layout
       bases_occupied = bases_occupied.map { |b| b.as_i }
       m << ". #{bases_occupied.size} on ("
 
-      number_bases = bases_occupied.max
-      if number_of_bases_including_home && number_bases < number_of_bases_including_home
-        number_bases = number_of_bases_including_home
+      number_bases = bases_occupied.max + 1
+      if number_of_bases_including_home && number_bases < (number_of_bases_including_home - 1)
+        number_bases = number_of_bases_including_home - 1
       end
-      if number_bases < 4
-        number_bases = 4
+      if number_bases < 3
+        number_bases = 3
       end
 
-      bases = Array.new(number_bases - 1, 0)
+      bases = Array.new(number_bases, 0)
       bases_occupied.each do |b|
         bases[b] += 1
       end
