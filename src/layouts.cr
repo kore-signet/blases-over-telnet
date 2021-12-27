@@ -150,7 +150,7 @@ class DefaultLayout < Layout
           return team_name
         end
       end
-      raise "Team with id #{target_team_id} not found in sim league object"
+      return "Unknown Team"
     else
       return away ? game[away_game_identifier].to_s : game[home_game_identifier].to_s
     end
