@@ -2,8 +2,6 @@ require "json"
 require "sse"
 require "json-tools"
 
-CHRONICLER_URL = URI.parse(ENV["CHRONICLER_URL"] ||= "https://api.sibr.dev/chronicler/")
-
 class SourceData
   property temporal : Hash(String, JSON::Any)? = nil
   property games : Array(JSON::Any)? = nil
@@ -138,6 +136,8 @@ class ChroniclerSource < Source
         @last_time = next_message[0]
         @tx.send({ident, next_message[1]})
       end
+
+      pp "loop ended at time #{@last_time}"
     end
   end
 
@@ -158,18 +158,25 @@ class ChroniclerSource < Source
   end
 
   def fetch_messages
-    url = CHRONICLER_URL
+    puts "fetching messages"
+
+    url = URI.parse(ENV["CHRONICLER_URL"] ||= "https://api.sibr.dev/chronicler/")
     url.query = URI::Params.encode({"type" => "Stream", "count" => "30", "order" => "asc", "after" => @last_time.to_rfc3339})
     url.path = (Path.new(url.path) / "v2" / "versions").to_s
 
     response = HTTP::Client.get url
 
-    messages = JSON.parse response.body
-    @cached_messages = messages["items"].as_a.select { |v| !v["data"]["value"]?.nil? }.map do |v|
-      {
-        Time.parse_rfc3339(v["validFrom"].as_s),
-        SourceData.new v["data"]["value"],
-      }
+    if response.success?
+      messages = JSON.parse response.body
+      @cached_messages = messages["items"].as_a.select { |v| !v["data"]["value"]?.nil? }.map do |v|
+        {
+          Time.parse_rfc3339(v["validFrom"].as_s),
+          SourceData.new v["data"]["value"],
+        }
+      end
+    else
+      puts "http request failed"
+      pp response.status_code
     end
   end
 
