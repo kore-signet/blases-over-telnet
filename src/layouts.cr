@@ -247,6 +247,8 @@ class DefaultLayout < Layout
         end
       end
     end
+
+    m << "\r\n"
   end
 
   def render_game_status(
