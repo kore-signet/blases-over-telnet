@@ -264,7 +264,7 @@ class DefaultLayout < Layout
     else
       max_balls = game["homeBalls"].as_i?
       max_strikes = game["homeStrikes"].as_i?
-      max_outs = game["awayOuts"].as_i?
+      max_outs = game["homeOuts"].as_i?
       number_of_bases_including_home = game["homeBases"].as_i?
     end
 
