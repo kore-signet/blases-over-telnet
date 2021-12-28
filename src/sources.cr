@@ -158,8 +158,6 @@ class ChroniclerSource < Source
   end
 
   def fetch_messages
-    puts "fetching messages"
-
     url = URI.parse(ENV["CHRONICLER_URL"] ||= "https://api.sibr.dev/chronicler/")
     url.query = URI::Params.encode({"type" => "Stream", "count" => "30", "order" => "asc", "after" => @last_time.to_rfc3339})
     url.path = (Path.new(url.path) / "v2" / "versions").to_s
