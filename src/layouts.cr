@@ -150,7 +150,7 @@ class DefaultLayout < Layout
           return team_name
         end
       end
-      raise "Team with id #{target_team_id} not found in sim league object"
+      return "Unknown Team"
     else
       return away ? game[away_game_identifier].to_s : game[home_game_identifier].to_s
     end
@@ -186,7 +186,11 @@ class DefaultLayout < Layout
       else
         render_game_status colorizer, game, m
 
-        m << make_newlines(game["lastUpdate"].as_s)
+        last_update = make_newlines(game["lastUpdate"].as_s)
+        m << last_update
+        if !last_update.ends_with?("\r\n")
+          m << "\r\n"
+        end
       end
     end
   end
@@ -243,6 +247,8 @@ class DefaultLayout < Layout
         end
       end
     end
+
+    m << "\r\n"
   end
 
   def render_game_status(
@@ -258,7 +264,7 @@ class DefaultLayout < Layout
     else
       max_balls = game["homeBalls"].as_i?
       max_strikes = game["homeStrikes"].as_i?
-      max_outs = game["awayOuts"].as_i?
+      max_outs = game["homeOuts"].as_i?
       number_of_bases_including_home = game["homeBases"].as_i?
     end
 
@@ -281,15 +287,15 @@ class DefaultLayout < Layout
       bases_occupied = bases_occupied.map { |b| b.as_i }
       m << ". #{bases_occupied.size} on ("
 
-      number_bases = bases_occupied.max
-      if number_of_bases_including_home && number_bases < number_of_bases_including_home
-        number_bases = number_of_bases_including_home
+      number_bases = bases_occupied.max + 1
+      if number_of_bases_including_home && number_bases < (number_of_bases_including_home - 1)
+        number_bases = number_of_bases_including_home - 1
       end
-      if number_bases < 4
-        number_bases = 4
+      if number_bases < 3
+        number_bases = 3
       end
 
-      bases = Array.new(number_bases - 1, 0)
+      bases = Array.new(number_bases, 0)
       bases_occupied.each do |b|
         bases[b] += 1
       end
