@@ -1,9 +1,29 @@
 require "socket"
 require "colorize"
+require "http/client"
+require "../client.cr"
+require "./base.cr"
 
-#
+class HelpAction < Action
+  getter aliases : Set(String) = Set{"help"}
 
-def show_help(socket : TCPSocket, query : String)
+  def invoke(
+    client : Client,
+    tx : Channel({String, SourceData}),
+    sources : Hash(String, Source),
+    line : String
+  ) : Nil
+    client.socket << "\x1b[1;1H"
+    client.socket << "\x1b[0J"
+    client.writeable = false
+    show_help(client.socket, line)
+  end
+end
+
+def show_help(
+  socket : TCPSocket,
+  query : String
+) : Nil
   socket << "blases over telnet - help\r\n"
   socket << "\twelcome to blases over telnet\r\n"
   socket << "\n"
