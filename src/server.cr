@@ -62,8 +62,6 @@ def handle_client(
         if actions_by_aliases.has_key?(line_start)
           actions_by_aliases[line_start].invoke client, tx, sources, line
         else
-          pp line
-          pp line_start
           closest_match = Levenshtein.find(line, actions_by_aliases.keys, 4)
           socket << "Unknown command: "
           socket << line
