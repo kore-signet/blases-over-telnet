@@ -38,6 +38,17 @@ def handle_client(
     color_map = ColorMap.new "color_data.json"
     colorizer = Colorizer.new color_map
     default_renderer = DefaultLayout.new colorizer, feed_season_list
+    
+    # trash telnet handshake if present; timeout after 500ms and continue if there's no handshake to be read
+    socket.read_timeout = Time::Span.new(nanoseconds: 500_000_000)
+    begin
+      trash = Bytes.new(27)
+      socket.read trash
+    rescue IO::TimeoutError
+      # nothin
+    ensure
+      socket.read_timeout = nil
+    end
 
     socket << "\x1b[1;1H"   # return cusor to start of page
     socket << "\x1b[0J"     # clear from cursor to the end of the page

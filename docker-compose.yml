@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  why:
+    build: .
+    ports:
+      - "23:23"
+    environment:
+      - "PORT=23"
+      - "STREAM_URL=https://api.blaseball.com/events/streamData"
+    restart: unless-stopped
