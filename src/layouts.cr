@@ -77,16 +77,14 @@ class DefaultLayout < Layout
   def initialize(@colorizer, @feed_season_list)
   end
 
-  def render(message : Hash(String, JSON::Any))
-    if message.has_key? "leagues"
-      @last_league = message["leagues"].as_h
+  def render(message : SourceData)
+    message.leagues.try do |leagues|
+      @last_league = leagues
     end
 
-    if !message.has_key? "games"
+    if message.games.nil? || message.sim.nil?
       return @last_message
     end
-
-    games = message["games"]
 
     @last_message = String.build do |m|
       m << "\x1b7"          # bell
@@ -94,14 +92,14 @@ class DefaultLayout < Layout
       m << "\x1b[1;1H"      # move cursor to top left of screen
       m << "\x1b[0J"        # clear from cursor to end of screen
 
-      readable_day = games["sim"]["day"].as_i + 1
+      sim = message.sim.not_nil!
+      readable_day = sim["day"].as_i + 1
 
-      m << %(Day #{readable_day}, Season #{games["sim"]["season"].as_i + 1}).colorize.bold.to_s
+      m << %(Day #{readable_day}, Season #{sim["season"].as_i + 1}).colorize.bold.to_s
       m << "\n\r"
-      m << render_season_identifier @colorizer, games.as_h
+      m << render_season_identifier @colorizer, message
 
-      schedule = games["schedule"].as_a
-      if schedule.size == 0
+      if message.games == 0
         m << "No games for day #{readable_day}"
       else
         column_width = 85
@@ -109,7 +107,7 @@ class DefaultLayout < Layout
         current_row_for_column = Array.new(number_of_columns, 4)
         column = 0
 
-        schedule.sort_by { |g| get_team_name g, true }.each do |game|
+        message.games.not_nil!.sort_by { |g| get_team_ordering g }.each do |game|
           colorizer.current_game = game.as_h
           game_string = render_game colorizer, game
           game_string, current_row_for_column[column] = move_lines(game_string, column * column_width, current_row_for_column[column])
@@ -118,10 +116,23 @@ class DefaultLayout < Layout
         end
       end
 
-      m << "\x1b8"
+      m << "\x1b7"
     end
 
     @last_message
+  end
+
+  def get_team_ordering(
+    game : JSON::Any
+  ) : String
+    away_team_name = get_team_name game, true
+    home_team_name = get_team_name game, false
+    if away_team_name == "nullteam"
+      return "ZZZ#{home_team_name}"
+    elsif home_team_name == "nullteam"
+      return "ZZZ#{away_team_name}"
+    end
+    return away_team_name
   end
 
   def get_team_name(
@@ -160,7 +171,7 @@ class DefaultLayout < Layout
           return team_name
         end
       end
-      raise "Team with id #{target_team_id} not found in sim league object"
+      return "Unknown Team"
     else
       return away ? game[away_game_identifier].to_s : game[home_game_identifier].to_s
     end
@@ -191,96 +202,24 @@ class DefaultLayout < Layout
       m << "\n\r"
 
       if game["finalized"].as_bool?
-        away_score = (game["awayScore"].as_f? || game["awayScore"].as_i?).not_nil!
-        home_score = (game["homeScore"].as_f? || game["homeScore"].as_i?).not_nil!
-        if away_score > home_score
-          m << %(The #{colorizer.colorize_string_for_team true, away_team_nickname} #{"won against".colorize.underline} the #{colorizer.colorize_string_for_team false, home_team_nickname})
-        else
-          m << %(The #{colorizer.colorize_string_for_team false, home_team_nickname} #{"won against".colorize.underline} the #{colorizer.colorize_string_for_team true, away_team_nickname})
-        end
-        m << "\n\r"
+        render_finalized_game colorizer, game, m, away_team_name, home_team_name, away_team_nickname, home_team_nickname
       else
-        if game["topOfInning"].as_bool?
-          max_balls = game["awayBalls"].as_i?
-          max_strikes = game["awayStrikes"].as_i?
-          max_outs = game["awayOuts"].as_i?
-          number_of_bases_including_home = game["awayBases"].as_i?
-        else
-          max_balls = game["homeBalls"].as_i?
-          max_strikes = game["homeStrikes"].as_i?
-          max_outs = game["awayOuts"].as_i?
-          number_of_bases_including_home = game["homeBases"].as_i?
+        render_game_status colorizer, game, m
+
+        last_update = make_newlines(game["lastUpdate"].as_s)
+        m << last_update
+        if !last_update.ends_with?("\r\n")
+          m << "\r\n"
         end
-
-        m << game["atBatBalls"]
-        if max_balls && max_balls != 4
-          m << %( (of #{max_balls}))
-        end
-
-        m << "-"
-
-        m << game["atBatStrikes"]
-        if max_strikes && max_strikes != 3
-          m << %( (of #{max_strikes}))
-        end
-
-        bases_occupied = game["basesOccupied"].as_a
-        if bases_occupied.size == 0
-          m << ". Nobody on"
-        else
-          bases_occupied = bases_occupied.map { |b| b.as_i }
-          m << ". #{bases_occupied.size} on ("
-
-          number_bases = bases_occupied.max
-          if number_of_bases_including_home && number_bases < number_of_bases_including_home
-            number_bases = number_of_bases_including_home
-          end
-          if number_bases < 4
-            number_bases = 4
-          end
-
-          bases = Array.new(number_bases - 1, 0)
-          bases_occupied.each do |b|
-            bases[b] += 1
-          end
-
-          bases.reverse.each do |b|
-            if b == 0
-              m << "\u{25cb}"
-            elsif b == 1
-              m << "\u{25cf}"
-            else
-              m << b.to_s
-            end
-          end
-
-          m << ")"
-        end
-
-        number_of_outs = game["halfInningOuts"]
-        if number_of_outs == 0
-          m << ", no outs"
-        elsif number_of_outs == 1
-          m << ", 1 out"
-        else
-          m << ", #{number_of_outs} outs"
-        end
-
-        if max_outs && max_outs != 3
-          m << %( (of #{max_outs}))
-        end
-        m << ".\r\n"
-
-        m << make_newlines(game["lastUpdate"].as_s)
       end
     end
   end
 
   def render_season_identifier(
     colorizer : Colorizer,
-    games : Hash(String, JSON::Any)
+    message : SourceData
   ) : String
-    sim = games["sim"]
+    sim = message.sim.not_nil!
     id = sim["id"].to_s
 
     if id != "thisidisstaticyo"
@@ -298,6 +237,115 @@ class DefaultLayout < Layout
         return ""
       end
     end
+  end
+
+  def render_finalized_game(
+    colorizer : Colorizer,
+    game : JSON::Any,
+    m : String::Builder,
+    away_team_name : String,
+    home_team_name : String,
+    away_team_nickname : String,
+    home_team_nickname : String
+  ) : Nil
+    if away_team_name == "nullteam"
+      if home_team_name == "nullteam"
+        m << "Game cancelled"
+      else
+        m << %(The #{colorizer.colorize_string_for_team false, home_team_nickname} #{"non-lost".colorize.underline} due to nullification.)
+      end
+    else
+      if home_team_name == "nullteam"
+        m << %(The #{colorizer.colorize_string_for_team true, away_team_nickname} #{"non-lost".colorize.underline} due to nullification.)
+      else
+        away_score = (game["awayScore"].as_f? || game["awayScore"].as_i?).not_nil!
+        home_score = (game["homeScore"].as_f? || game["homeScore"].as_i?).not_nil!
+        if away_score > home_score
+          m << %(The #{colorizer.colorize_string_for_team true, away_team_nickname} #{"won against".colorize.underline} the #{colorizer.colorize_string_for_team false, home_team_nickname})
+        else
+          m << %(The #{colorizer.colorize_string_for_team false, home_team_nickname} #{"won against".colorize.underline} the #{colorizer.colorize_string_for_team true, away_team_nickname})
+        end
+      end
+    end
+
+    m << "\r\n"
+  end
+
+  def render_game_status(
+    colorizer : Colorizer,
+    game : JSON::Any,
+    m : String::Builder
+  ) : Nil
+    if game["topOfInning"].as_bool?
+      max_balls = game["awayBalls"].as_i?
+      max_strikes = game["awayStrikes"].as_i?
+      max_outs = game["awayOuts"].as_i?
+      number_of_bases_including_home = game["awayBases"].as_i?
+    else
+      max_balls = game["homeBalls"].as_i?
+      max_strikes = game["homeStrikes"].as_i?
+      max_outs = game["homeOuts"].as_i?
+      number_of_bases_including_home = game["homeBases"].as_i?
+    end
+
+    m << game["atBatBalls"]
+    if max_balls && max_balls != 4
+      m << %( (of #{max_balls}))
+    end
+
+    m << "-"
+
+    m << game["atBatStrikes"]
+    if max_strikes && max_strikes != 3
+      m << %( (of #{max_strikes}))
+    end
+
+    bases_occupied = game["basesOccupied"].as_a
+    if bases_occupied.size == 0
+      m << ". Nobody on"
+    else
+      bases_occupied = bases_occupied.map { |b| b.as_i }
+      m << ". #{bases_occupied.size} on ("
+
+      number_bases = bases_occupied.max + 1
+      if number_of_bases_including_home && number_bases < (number_of_bases_including_home - 1)
+        number_bases = number_of_bases_including_home - 1
+      end
+      if number_bases < 3
+        number_bases = 3
+      end
+
+      bases = Array.new(number_bases, 0)
+      bases_occupied.each do |b|
+        bases[b] += 1
+      end
+
+      bases.reverse.each do |b|
+        if b == 0
+          m << "\u{25cb}"
+        elsif b == 1
+          m << "\u{25cf}"
+        else
+          m << b.to_s
+        end
+      end
+
+      m << ")"
+    end
+
+    number_of_outs = game["halfInningOuts"]
+    if number_of_outs == 0
+      m << ", no outs"
+    elsif number_of_outs == 1
+      m << ", 1 out"
+    else
+      m << ", #{number_of_outs} outs"
+    end
+
+    if max_outs && max_outs != 3
+      m << %( (of #{max_outs}))
+    end
+    m << ".\r\n"
   end
 
   def render_temporal(
