@@ -77,7 +77,9 @@ class DefaultLayout < Layout
   def initialize(@colorizer, @feed_season_list)
   end
 
-  def render(message : SourceData)
+  def render(
+    message : SourceData,
+    settings : UserSettings)
     message.leagues.try do |leagues|
       @last_league = leagues
     end
@@ -102,16 +104,17 @@ class DefaultLayout < Layout
       if message.games == 0
         m << "No games for day #{readable_day}"
       else
-        column_width = 85
-        number_of_columns = 2
-        current_row_for_column = Array.new(number_of_columns, 4)
+        start_offset = 4
+        current_row_for_column = Array.new(settings.number_of_columns, start_offset)
         column = 0
 
         message.games.not_nil!.sort_by { |g| get_team_ordering g }.each do |game|
           colorizer.current_game = game.as_h
           game_string = render_game colorizer, game
-          game_string, current_row_for_column[column] = move_lines(game_string, column * column_width, current_row_for_column[column])
-          column = (column + 1) % number_of_columns
+          if settings.use_columns
+            game_string, current_row_for_column[column] = move_lines(game_string, column * settings.column_width, current_row_for_column[column])
+            column = (column + 1) % settings.number_of_columns
+          end
           m << game_string
         end
       end

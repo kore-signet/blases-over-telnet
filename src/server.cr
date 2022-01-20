@@ -58,7 +58,7 @@ def handle_client(
     sockets << client
     sources["live"].add_client
 
-    socket << default_renderer.render sources["live"].last_data
+    socket << default_renderer.render sources["live"].last_data, client.settings
 
     while line = socket.gets chomp: false
       line = line.strip

@@ -1,5 +1,6 @@
 require "socket"
 require "./layouts.cr"
+require "./user_settings.cr"
 
 class Client
   property renderer : Layout
@@ -7,6 +8,7 @@ class Client
   getter socket : TCPSocket
   property writeable : Bool = true
   property closed : Bool = false
+  property settings : UserSettings = UserSettings.new
 
   def initialize(@renderer, @socket, @source)
   end
@@ -17,6 +19,6 @@ class Client
   end
 
   def render(msg)
-    @renderer.render msg
+    @renderer.render msg, settings
   end
 end
