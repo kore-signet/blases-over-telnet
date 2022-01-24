@@ -38,7 +38,12 @@ def show_help(
   socket << "\tpause\r\n"
   socket << "\t  pauses the writing to your screen (time keeps marching on in the background)\r\n"
   socket << "\tresume\r\n"
-  socket << "\t  resumes writing live updates to your screen"
+  socket << "\t  resumes writing live updates to your screen\r\n"
+  socket << "\tdisplay\r\n"
+  socket << "\t  set display options (currently just column control)\r\n"
+  # socket << "\t  (focused games maybe coming soon)\r\n"
+  # socket << "\tstandings\r\n"
+  # socket << "\t  coming soon\r\n"
   socket << "\x1b[10000E" # goto end of page
   socket << "\x1b[1F"     # go back up a line
   socket << "type 'resume' to return to the feed\r\n"

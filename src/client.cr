@@ -9,6 +9,7 @@ class Client
   property writeable : Bool = true
   property closed : Bool = false
   property settings : UserSettings = UserSettings.new
+  property last_rendered_message : String = ""
 
   def initialize(@renderer, @socket, @source)
   end
@@ -19,6 +20,7 @@ class Client
   end
 
   def render(msg : SourceData)
-    @renderer.render msg, settings
+    @last_rendered_message = @renderer.render msg, settings
+    @last_rendered_message
   end
 end

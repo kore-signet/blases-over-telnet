@@ -7,6 +7,7 @@ class DisplayAction < Action
     sources : Hash(String, Source),
     line : String
   ) : Nil
+    client.writeable = false
     client.socket << "\r\nenter a number of columns: "
     number_of_columns_string = client.socket.gets chomp: false
     if !number_of_columns_string
@@ -43,5 +44,7 @@ class DisplayAction < Action
       client.socket << number_of_columns_string
       client.socket << "\" is not a valid number (must be between 0 and 255).\r\n"
     end
+    client.writeable = true
+    client.socket << client.last_rendered_message
   end
 end

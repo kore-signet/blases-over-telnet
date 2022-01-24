@@ -24,5 +24,6 @@ class ResumeAction < Action
     line : String
   ) : Nil
     client.writeable = true
+    client.socket << client.last_rendered_message
   end
 end
