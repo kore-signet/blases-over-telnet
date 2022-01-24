@@ -1,11 +1,10 @@
 require "json"
 require "sse"
-require "json-tools"
 
 class SourceData
   property temporal : Hash(String, JSON::Any)? = nil
   property games : Array(JSON::Any)? = nil
-  property leagues : Hash(String, JSON::Any)? = nil
+  property teams : Array(JSON::Any)? = nil
   property sim : Hash(String, JSON::Any)? = nil
 
   def initialize
@@ -16,7 +15,6 @@ class SourceData
   end
 
   def from_stream(value : JSON::Any)
-    @leagues = value["leagues"]?.try &.as_h?
     @temporal = value["temporal"]?.try &.as_h?
     value["games"]?.try do |games_data|
       @sim = games_data["sim"]?.try &.as_h?
@@ -32,58 +30,30 @@ abstract class Source
   abstract def last_data
 end
 
-class LiveSource < Source
-  property sse : HTTP::ServerSentEvents::EventSource
+class CompositeLiveSource < Source
   property tx : Channel({String, SourceData})
   property ident : String
   property clients : Int32 = 0
   property current_data : SourceData
-  property last_message : JSON::Any
+  property running : Bool = true
 
-  def initialize(url : String, @ident : String, @tx : Channel({String, SourceData}))
+  def initialize(@ident : String, @tx : Channel({String, SourceData}))
     @current_data = SourceData.new
-    @last_message = JSON.parse(%({"empty": "message"}))
-
-    @sse = HTTP::ServerSentEvents::EventSource.new url
-    @sse.on_message do |msg|
-      begin
-        parsed_message = JSON.parse(msg.data[0]).as_h
-      rescue ex
-        begin
-          parsed_message = JSON.parse(msg.data[0][8..msg.data[0].size - 2])
-        rescue ex2
-          puts "error in source #{ident}"
-          pp ex.inspect_with_backtrace
-          puts "error in SSE formatting workaround"
-          pp ex2.inspect_with_backtrace
-          next
-        end
-      end
-
-      if parsed_message.has_key? "value"
-        @last_message = parsed_message["value"]
-
-        @current_data.from_stream @last_message
-        @tx.send({@ident, @current_data})
-      elsif parsed_message.has_key? "delta"
-        apply_patch(parsed_message["delta"])
-
-        @current_data.from_stream @last_message
-        @tx.send({@ident, @current_data})
-      end
-    end
 
     spawn do
-      @sse.run
-    end
-  end
+      while @running
+        @current_data.sim = get_sim
+        break if !@current_data.sim
+        current_sim = @current_data.sim.not_nil!
+        break if Time::Format::ISO_8601_DATE_TIME.parse(current_sim["simEnd"].to_s) < Time.utc
 
-  def apply_patch(patch : JSON::Any)
-    begin
-      @last_message = Json::Tools::Patch.new(patch).apply(@last_message)
-    rescue ex
-      puts "error in applying patch"
-      pp ex.inspect_with_backtrace
+        @current_data.teams = get_teams
+        @current_data.games = get_games current_sim["day"].as_i, current_sim["season"].as_i, current_sim["id"].as_s
+        @tx.send({@ident, @current_data})
+        sleep 2.seconds
+      end
+
+      pp "loop ended at time #{Time.utc}"
     end
   end
 
@@ -100,10 +70,51 @@ class LiveSource < Source
   end
 
   def close
-    @sse.stop
+    @running = false
   end
 
-  def set_last_message(@last_message)
+  def get_sim : Hash(String, JSON::Any)
+    get_chron_entity("Sim")[0]["data"].as_h
+  end
+
+  def get_teams : Array(JSON::Any)
+    get_chron_entity("Team").as_a.map { |e| e["data"] }
+  end
+
+  def get_chron_entity(entity_type : String) : JSON::Any
+    url = URI.parse(ENV["CHRONICLER_URL"] ||= "https://api.sibr.dev/chronicler/")
+    url.query = URI::Params.encode({"type" => entity_type})
+    url.path = (Path.new(url.path) / "v2" / "entities").to_s
+
+    response = HTTP::Client.get url
+
+    if response.success?
+      messages = JSON.parse response.body
+      return messages["items"]
+    else
+      puts "http request failed"
+      pp url
+      pp response.status_code
+      return JSON.parse(%({"response_code": "failure"}))
+    end
+  end
+
+  def get_games(day : Int32, season : Int32, sim : String) : Array(JSON::Any)
+    url = URI.parse(ENV["CHRONICLER_URL"] ||= "https://api.sibr.dev/chronicler/")
+    url.query = URI::Params.encode({"day" => day.to_s, "season" => season.to_s, "sim" => sim})
+    url.path = (Path.new(url.path) / "v1" / "games").to_s
+
+    response = HTTP::Client.get url
+
+    if response.success?
+      messages = JSON.parse response.body
+      return messages["data"].as_a.map { |g| g["data"] }
+    else
+      puts "http request failed"
+      pp url
+      pp response.status_code
+      return Array(JSON::Any).new
+    end
   end
 
   def last_data : SourceData

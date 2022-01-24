@@ -1,4 +1,6 @@
 require "colorize"
+require "./sources.cr"
+
 color_map = ColorMap.new "color_data.json"
 
 def make_ord(number : Number) : String
@@ -70,7 +72,7 @@ end
 
 class DefaultLayout < Layout
   property last_message : String = ""
-  property last_league : Hash(String, JSON::Any) = Hash(String, JSON::Any).new
+  property last_teams : Array(JSON::Any) = Array(JSON::Any).new
   property colorizer : Colorizer
   property feed_season_list : Hash(String, JSON::Any)
 
@@ -79,9 +81,10 @@ class DefaultLayout < Layout
 
   def render(
     message : SourceData,
-    settings : UserSettings)
-    message.leagues.try do |leagues|
-      @last_league = leagues
+    settings : UserSettings
+  )
+    message.teams.try do |teams|
+      @last_teams = teams
     end
 
     if message.games.nil? || message.sim.nil?
@@ -114,9 +117,13 @@ class DefaultLayout < Layout
           if settings.use_columns
             game_string, current_row_for_column[column] = move_lines(game_string, column * settings.column_width, current_row_for_column[column])
             column = (column + 1) % settings.number_of_columns
+            m << game_string
+          else
+            m << game_string
+            m << "\r\n"
           end
-          m << game_string
         end
+        m << "\r\n"
       end
 
       m << "\x1b7"
@@ -159,9 +166,9 @@ class DefaultLayout < Layout
     home_game_identifier : String,
     identifier : String
   ) : String
-    if @last_league.has_key? "teams"
+    if @last_teams
       target_team_id = away ? game["awayTeam"] : game["homeTeam"]
-      last_league["teams"].as_a.each do |team_json|
+      last_teams.each do |team_json|
         team = team_json.as_h
         if team["id"] == target_team_id
           team_name = team[identifier].to_s
@@ -227,7 +234,11 @@ class DefaultLayout < Layout
 
     if id != "thisidisstaticyo"
       collection = @feed_season_list["items"][0]["data"]["collection"].as_a.index_by { |s| s["sim"] }
-      return %(#{collection[id]["name"]}\r\n)
+      if collection.has_key? id
+        return %(#{collection[id]["name"]}\r\n)
+      else
+        return "Unknown SIM #{id}\r\n"
+      end
     else
       era_title = sim["eraTitle"].to_s
       sub_era_title = sim["subEraTitle"].to_s

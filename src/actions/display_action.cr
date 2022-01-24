@@ -17,23 +17,23 @@ class DisplayAction < Action
 
     if number_of_columns
       if number_of_columns < 2
-        client.socket << "\r\nno longer using columns"
+        client.socket << "no longer using columns"
         client.settings.number_of_columns = 1
       else
-        client.socket << "\r\nenter a desired column width: "
+        client.socket << "enter a desired column width: "
         column_width_string = client.socket.gets chomp: false
         if !column_width_string
           return
         end
-    
+
         column_width = column_width_string.to_u8?
 
         if column_width
-          client.socket << "\r\nnow using columns.\r\n"
+          client.socket << "now using columns.\r\n"
           client.settings.number_of_columns = number_of_columns
           client.settings.column_width = column_width
         else
-          client.socket << "\r\n\""
+          client.socket << "\""
           client.socket << column_width_string
           client.socket << "\" is not a valid number.\r\n"
         end

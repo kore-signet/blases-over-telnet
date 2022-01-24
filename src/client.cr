@@ -18,7 +18,7 @@ class Client
     @socket.close
   end
 
-  def render(msg)
+  def render(msg : SourceData)
     @renderer.render msg, settings
   end
 end
