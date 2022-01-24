@@ -1,4 +1,6 @@
 require "colorize"
+require "./sources.cr"
+
 color_map = ColorMap.new "color_data.json"
 
 def make_ord(number : Number) : String
@@ -30,6 +32,19 @@ def make_newlines(input : String) : String
   return result
 end
 
+def move_lines(input : String, column : Int, row : Int) : Tuple(String, Int32)
+  line_break_regex = /(\r\n|\n\r)/
+  result = "\x1b[#{row};#{column}H#{input}"
+  row += 1
+  regex_match = input.match(line_break_regex)
+  while regex_match
+    result = result.sub(line_break_regex, "\x1b[#{row};#{column}H")
+    row += 1
+    regex_match = result.match(line_break_regex)
+  end
+  return {result, row}
+end
+
 class Colorizer
   property color_map : ColorMap
   property current_game : Hash(String, JSON::Any)
@@ -57,16 +72,19 @@ end
 
 class DefaultLayout < Layout
   property last_message : String = ""
-  property last_league : Hash(String, JSON::Any) = Hash(String, JSON::Any).new
+  property last_teams : Array(JSON::Any) = Array(JSON::Any).new
   property colorizer : Colorizer
   property feed_season_list : Hash(String, JSON::Any)
 
   def initialize(@colorizer, @feed_season_list)
   end
 
-  def render(message : SourceData)
-    message.leagues.try do |leagues|
-      @last_league = leagues
+  def render(
+    message : SourceData,
+    settings : UserSettings
+  )
+    message.teams.try do |teams|
+      @last_teams = teams
     end
 
     if message.games.nil? || message.sim.nil?
@@ -89,10 +107,23 @@ class DefaultLayout < Layout
       if message.games == 0
         m << "No games for day #{readable_day}"
       else
+        start_offset = 4
+        current_row_for_column = Array.new(settings.number_of_columns, start_offset)
+        column = 0
+
         message.games.not_nil!.sort_by { |g| get_team_ordering g }.each do |game|
           colorizer.current_game = game.as_h
-          m << render_game colorizer, game
+          game_string = render_game colorizer, game
+          if settings.use_columns
+            game_string, current_row_for_column[column] = move_lines(game_string, column * settings.column_width, current_row_for_column[column])
+            column = (column + 1) % settings.number_of_columns
+            m << game_string
+          else
+            m << game_string
+            m << "\r\n"
+          end
         end
+        m << "\r\n"
       end
 
       m << "\x1b7"
@@ -135,9 +166,9 @@ class DefaultLayout < Layout
     home_game_identifier : String,
     identifier : String
   ) : String
-    if @last_league.has_key? "teams"
+    if @last_teams
       target_team_id = away ? game["awayTeam"] : game["homeTeam"]
-      last_league["teams"].as_a.each do |team_json|
+      last_teams.each do |team_json|
         team = team_json.as_h
         if team["id"] == target_team_id
           team_name = team[identifier].to_s
@@ -165,7 +196,6 @@ class DefaultLayout < Layout
     away_team_nickname = get_team_nickname(game, true)
     home_team_nickname = get_team_nickname(game, false)
     String.build do |m|
-      m << "\n\r"
       m << %(#{colorizer.colorize_string_for_team true, away_team_name})
       m << %( #{"@".colorize.underline} )
       m << %(#{colorizer.colorize_string_for_team false, home_team_name})
@@ -204,7 +234,11 @@ class DefaultLayout < Layout
 
     if id != "thisidisstaticyo"
       collection = @feed_season_list["items"][0]["data"]["collection"].as_a.index_by { |s| s["sim"] }
-      return %(#{collection[id]["name"]}\r\n)
+      if collection.has_key? id
+        return %(#{collection[id]["name"]}\r\n)
+      else
+        return "Unknown SIM #{id}\r\n"
+      end
     else
       era_title = sim["eraTitle"].to_s
       sub_era_title = sim["subEraTitle"].to_s

@@ -5,6 +5,7 @@ require "./live_action.cr"
 require "./playback_actions.cr"
 require "./replay_action.cr"
 require "./stlats_action.cr"
+require "./display_action.cr"
 
 def get_actions : Hash(String, Action)
   actions = [
@@ -15,13 +16,12 @@ def get_actions : Hash(String, Action)
     LiveAction.new,
     StlatsAction.new,
     ClearAction.new,
+    DisplayAction.new,
   ]
 
   actions_by_aliases = actions
     .flat_map { |action| action.aliases.map { |s| {s, action} } }
     .to_h
-
-  pp actions_by_aliases
 
   return actions_by_aliases
 end

@@ -13,7 +13,6 @@ require "./actions/get_actions.cr"
 #
 sockets = Array(Client).new
 
-ENV["STREAM_URL"] ||= "https://api.blaseball.com/events/streamData"
 ENV["SIBR_API_URL"] ||= "https://api.sibr.dev"
 ENV["PORT"] ||= "8023"
 server = TCPServer.new "0.0.0.0", ENV["PORT"].to_i
@@ -23,7 +22,9 @@ tx = Channel({String, SourceData}).new
 actions_by_aliases = get_actions()
 
 sources = Hash(String, Source).new
-sources["live"] = LiveSource.new ENV["STREAM_URL"], "live", tx
+puts "starting live feed"
+sources["live"] = CompositeLiveSource.new "live", tx
+puts "fetching feed season list (update me tgb)"
 feed_season_list = JSON.parse((HTTP::Client.get "#{ENV["SIBR_API_URL"]}/chronicler/v2/entities?type=FeedSeasonList").body).as_h
 
 def handle_client(
@@ -38,7 +39,7 @@ def handle_client(
     color_map = ColorMap.new "color_data.json"
     colorizer = Colorizer.new color_map
     default_renderer = DefaultLayout.new colorizer, feed_season_list
-    
+
     # trash telnet handshake if present; timeout after 500ms and continue if there's no handshake to be read
     socket.read_timeout = Time::Span.new(nanoseconds: 500_000_000)
     begin
@@ -50,15 +51,15 @@ def handle_client(
       socket.read_timeout = nil
     end
 
-    socket << "\x1b[1;1H"   # return cusor to start of page
-    socket << "\x1b[0J"     # clear from cursor to the end of the page
-    socket << "\x1b[10000E" # move cursor down and to start of line
+    # socket << "\x1b[1;1H"   # return cusor to start of page
+    # socket << "\x1b[0J"     # clear from cursor to the end of the page
+    # socket << "\x1b[10000E" # move cursor down and to start of line
 
     client = Client.new default_renderer, socket, "live"
     sockets << client
     sources["live"].add_client
 
-    socket << default_renderer.render sources["live"].last_data
+    socket << default_renderer.render sources["live"].last_data, client.settings
 
     while line = socket.gets chomp: false
       line = line.strip
@@ -91,6 +92,7 @@ def handle_client(
 end
 
 spawn do
+  puts "starting client handling loop"
   while socket = server.accept?
     spawn handle_client(socket, sockets, sources, feed_season_list, actions_by_aliases, tx)
   end
@@ -119,6 +121,8 @@ while data = tx.receive?
         sources.delete data[0]
       end
     rescue ex
+      pp data[0]
+      pp sources.keys
       pp ex.inspect_with_backtrace
     end
   end
