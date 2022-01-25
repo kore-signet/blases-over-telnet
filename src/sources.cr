@@ -43,11 +43,11 @@ class CompositeLiveSource < Source
     spawn do
       while @running
         @current_data.sim = get_sim
-        break if !@current_data.sim
+        break if @current_data.sim.nil?
         current_sim = @current_data.sim.not_nil!
         break if Time::Format::ISO_8601_DATE_TIME.parse(current_sim["simEnd"].to_s) < Time.utc
 
-        @current_data.teams = get_teams
+        @current_data.teams = get_teams || @current_data.teams
         @current_data.games = get_games current_sim["day"].as_i, current_sim["season"].as_i, current_sim["id"].as_s
         @tx.send({@ident, @current_data})
         sleep 2.seconds
@@ -73,15 +73,23 @@ class CompositeLiveSource < Source
     @running = false
   end
 
-  def get_sim : Hash(String, JSON::Any)
-    get_chron_entity("Sim")[0]["data"].as_h
+  def get_sim : Hash(String, JSON::Any)?
+    response = get_chron_entity("Sim")
+    if response.nil?
+      return
+    end
+    return response.not_nil![0]["data"].as_h
   end
 
-  def get_teams : Array(JSON::Any)
-    get_chron_entity("Team").as_a.map { |e| e["data"] }
+  def get_teams : Array(JSON::Any)?
+    response = get_chron_entity("Team")
+    if response.nil?
+      return
+    end
+    return response.not_nil!.as_a.map { |e| e["data"] }
   end
 
-  def get_chron_entity(entity_type : String) : JSON::Any
+  def get_chron_entity(entity_type : String) : JSON::Any?
     url = URI.parse(ENV["CHRONICLER_URL"] ||= "https://api.sibr.dev/chronicler/")
     url.query = URI::Params.encode({"type" => entity_type})
     url.path = (Path.new(url.path) / "v2" / "entities").to_s
@@ -95,7 +103,7 @@ class CompositeLiveSource < Source
       puts "http request failed"
       pp url
       pp response.status_code
-      return JSON.parse(%({"response_code": "failure"}))
+      return
     end
   end
 
