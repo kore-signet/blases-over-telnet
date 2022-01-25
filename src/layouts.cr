@@ -119,6 +119,7 @@ class DefaultLayout < Layout
             column = (column + 1) % settings.number_of_columns
             m << game_string
           else
+            m << "\r\n"
             m << game_string
             m << "\r\n"
           end
