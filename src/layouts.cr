@@ -237,6 +237,8 @@ class DefaultLayout < Layout
       collection = @feed_season_list["items"][0]["data"]["collection"].as_a.index_by { |s| s["sim"] }
       if collection.has_key? id
         return %(#{collection[id]["name"]}\r\n)
+      elsif id == "gamma10"
+        return "Gamma 4\r\n"
       else
         return "Unknown SIM #{id}\r\n"
       end
