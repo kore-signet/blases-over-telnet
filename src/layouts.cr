@@ -288,6 +288,13 @@ class DefaultLayout < Layout
     game : JSON::Any,
     m : String::Builder
   ) : Nil
+    if !game["state"]?.nil? && !game["state"]["prizeMatch"]?.nil?
+      m << "Exhibition game".colorize.bold
+      m << ". Prize: "
+      m << game["state"]["prizeMatch"]["itemName"].to_s.colorize.bold
+      m << "\r\n"
+    end
+
     is_top_of_inning = game["topOfInning"].as_bool
 
     m << %(#{is_top_of_inning ? "Top of the" : "Bottom of the"} #{make_ord game["inning"].as_i + 1}).colorize.bold
