@@ -172,15 +172,19 @@ class CompositeLiveSource < Source
     url.query = URI::Params.encode({"type" => entity_type})
     url.path = (Path.new(url.path) / "v2" / "entities").to_s
 
-    response = HTTP::Client.get url
-
-    if response.success?
-      messages = JSON.parse response.body
-      return messages["items"]
-    else
-      Log.error { "http request failed" }
-      Log.error { url }
-      Log.error { response.status_code }
+    begin
+      response = HTTP::Client.get url
+      if response.success?
+        messages = JSON.parse response.body
+        return messages["items"]
+      else
+        Log.error { "http request failed" }
+        Log.error { url }
+        Log.error { response.status_code }
+        return
+      end
+    rescue ex
+      Log.error(exception: ex) { }
       return
     end
   end
@@ -190,15 +194,20 @@ class CompositeLiveSource < Source
     url.query = URI::Params.encode({"day" => day.to_s, "season" => season.to_s, "sim" => sim})
     url.path = (Path.new(url.path) / "v1" / "games").to_s
 
-    response = HTTP::Client.get url
+    begin
+      response = HTTP::Client.get url
 
-    if response.success?
-      messages = JSON.parse response.body
-      return messages["data"].as_a.map { |g| g["data"] }
-    else
-      puts "http request failed"
-      pp url
-      pp response.status_code
+      if response.success?
+        messages = JSON.parse response.body
+        return messages["data"].as_a.map { |g| g["data"] }
+      else
+        puts "http request failed"
+        pp url
+        pp response.status_code
+        return
+      end
+    rescue ex
+      Log.error(exception: ex) { }
       return
     end
   end
