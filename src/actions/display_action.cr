@@ -45,6 +45,6 @@ class DisplayAction < Action
       client.socket << "\" is not a valid number (must be between 0 and 255).\r\n"
     end
     client.writeable = true
-    client.socket << client.last_rendered_message
+    client.socket << client.rerender
   end
 end
