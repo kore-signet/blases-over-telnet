@@ -111,6 +111,10 @@ class DefaultLayout < Layout
         current_row_for_column = Array.new(settings.number_of_columns, start_offset)
         column = 0
 
+        if !settings.use_columns
+          m << "\r\n"
+        end
+
         message.games.not_nil!.sort_by { |g| get_team_ordering g }.each do |game|
           colorizer.current_game = game.as_h
           game_string = render_game colorizer, game
@@ -119,7 +123,6 @@ class DefaultLayout < Layout
             column = (column + 1) % settings.number_of_columns
             m << game_string
           else
-            m << "\r\n"
             m << game_string
             m << "\r\n"
           end
