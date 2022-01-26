@@ -111,6 +111,10 @@ class DefaultLayout < Layout
         current_row_for_column = Array.new(settings.number_of_columns, start_offset)
         column = 0
 
+        if !settings.use_columns
+          m << "\r\n"
+        end
+
         message.games.not_nil!.sort_by { |g| get_team_ordering g }.each do |game|
           colorizer.current_game = game.as_h
           game_string = render_game colorizer, game
@@ -236,6 +240,8 @@ class DefaultLayout < Layout
       collection = @feed_season_list["items"][0]["data"]["collection"].as_a.index_by { |s| s["sim"] }
       if collection.has_key? id
         return %(#{collection[id]["name"]}\r\n)
+      elsif id == "gamma10"
+        return "Gamma 4\r\n"
       else
         return "Unknown SIM #{id}\r\n"
       end
