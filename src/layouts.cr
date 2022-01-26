@@ -204,14 +204,6 @@ class DefaultLayout < Layout
       m << %( #{"@".colorize.underline} )
       m << %(#{colorizer.colorize_string_for_team false, home_team_name})
       m << %{ (#{colorizer.colorize_string_for_team true, game["awayScore"].to_s} v #{colorizer.colorize_string_for_team false, game["homeScore"].to_s})}
-      m << "\n\r"
-      m << %(#{game["topOfInning"].as_bool ? "Top of the" : "Bottom of the"} #{make_ord game["inning"].as_i + 1}).colorize.bold
-
-      if game["topOfInning"].as_bool
-        m << %( - #{colorizer.colorize_string_for_team false, game["homePitcherName"].to_s} pitching)
-      else
-        m << %( - #{colorizer.colorize_string_for_team true, game["awayPitcherName"].to_s} pitching)
-      end
 
       m << "\n\r"
 
@@ -296,18 +288,27 @@ class DefaultLayout < Layout
     game : JSON::Any,
     m : String::Builder
   ) : Nil
-    if game["topOfInning"].as_bool?
+    is_top_of_inning = game["topOfInning"].as_bool
+
+    m << %(#{is_top_of_inning ? "Top of the" : "Bottom of the"} #{make_ord game["inning"].as_i + 1}).colorize.bold
+
+    if is_top_of_inning
+      m << %( - #{colorizer.colorize_string_for_team false, game["homePitcherName"].to_s} pitching)
+
       max_balls = game["awayBalls"].as_i?
       max_strikes = game["awayStrikes"].as_i?
       max_outs = game["awayOuts"].as_i?
       number_of_bases_including_home = game["awayBases"].as_i?
     else
+      m << %( - #{colorizer.colorize_string_for_team true, game["awayPitcherName"].to_s} pitching)
+
       max_balls = game["homeBalls"].as_i?
       max_strikes = game["homeStrikes"].as_i?
       max_outs = game["homeOuts"].as_i?
       number_of_bases_including_home = game["homeBases"].as_i?
     end
 
+    m << "\n\r"
     m << game["atBatBalls"]
     if max_balls && max_balls != 4
       m << %( (of #{max_balls}))
