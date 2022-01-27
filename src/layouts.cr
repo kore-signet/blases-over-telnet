@@ -204,14 +204,6 @@ class DefaultLayout < Layout
       m << %( #{"@".colorize.underline} )
       m << %(#{colorizer.colorize_string_for_team false, home_team_name})
       m << %{ (#{colorizer.colorize_string_for_team true, game["awayScore"].to_s} v #{colorizer.colorize_string_for_team false, game["homeScore"].to_s})}
-      m << "\n\r"
-      m << %(#{game["topOfInning"].as_bool ? "Top of the" : "Bottom of the"} #{make_ord game["inning"].as_i + 1}).colorize.bold
-
-      if game["topOfInning"].as_bool
-        m << %( - #{colorizer.colorize_string_for_team false, game["homePitcherName"].to_s} pitching)
-      else
-        m << %( - #{colorizer.colorize_string_for_team true, game["awayPitcherName"].to_s} pitching)
-      end
 
       m << "\n\r"
 
@@ -268,27 +260,47 @@ class DefaultLayout < Layout
     away_team_nickname : String,
     home_team_nickname : String
   ) : Nil
+    away_team_name_colorized = colorizer.colorize_string_for_team true, away_team_nickname
+    home_team_name_colorized = colorizer.colorize_string_for_team false, home_team_nickname
+
     if away_team_name == "nullteam"
       if home_team_name == "nullteam"
-        m << "Game cancelled"
+        m << "Game cancelled\r\n"
       else
-        m << %(The #{colorizer.colorize_string_for_team false, home_team_nickname} #{"non-lost".colorize.underline} due to nullification.)
+        m << %(The #{home_team_name_colorized} #{"non-lost".colorize.underline} due to nullification.\r\n)
       end
     else
       if home_team_name == "nullteam"
-        m << %(The #{colorizer.colorize_string_for_team true, away_team_nickname} #{"non-lost".colorize.underline} due to nullification.)
+        m << %(The #{away_team_name_colorized} #{"non-lost".colorize.underline} due to nullification.\r\n)
       else
         away_score = (game["awayScore"].as_f? || game["awayScore"].as_i?).not_nil!
         home_score = (game["homeScore"].as_f? || game["homeScore"].as_i?).not_nil!
-        if away_score > home_score
-          m << %(The #{colorizer.colorize_string_for_team true, away_team_nickname} #{"won against".colorize.underline} the #{colorizer.colorize_string_for_team false, home_team_nickname})
+
+        winning_team = away_score > home_score ? away_team_name_colorized : home_team_name_colorized
+        losing_team = away_score > home_score ? home_team_name_colorized : away_team_name_colorized
+        win_type = game["shame"].as_bool ? "shamed" : "won against"
+
+        m << "The "
+        m << winning_team
+        m << " "
+        m << win_type.colorize.underline
+        m << " the "
+        m << losing_team
+        m << "\r\n"
+
+        if !game["outcomes"]?.nil?
+          game["outcomes"]
+            .as_a
+            .map { |outcome| outcome.to_s }
+            .reject { |outcome| outcome =~ / won the / }
+            .each do |outcome|
+              m << make_newlines outcome
+            end
         else
-          m << %(The #{colorizer.colorize_string_for_team false, home_team_nickname} #{"won against".colorize.underline} the #{colorizer.colorize_string_for_team true, away_team_nickname})
+          m << "\r\n"
         end
       end
     end
-
-    m << "\r\n"
   end
 
   def render_game_status(
@@ -296,18 +308,34 @@ class DefaultLayout < Layout
     game : JSON::Any,
     m : String::Builder
   ) : Nil
-    if game["topOfInning"].as_bool?
+    if !game["state"]?.nil? && !game["state"]["prizeMatch"]?.nil?
+      m << "Exhibition game".colorize.bold
+      m << ". Prize: "
+      m << game["state"]["prizeMatch"]["itemName"].to_s.colorize.bold
+      m << "\r\n"
+    end
+
+    is_top_of_inning = game["topOfInning"].as_bool
+
+    m << %(#{is_top_of_inning ? "Top of the" : "Bottom of the"} #{make_ord game["inning"].as_i + 1}).colorize.bold
+
+    if is_top_of_inning
+      m << %( - #{colorizer.colorize_string_for_team false, game["homePitcherName"].to_s} pitching)
+
       max_balls = game["awayBalls"].as_i?
       max_strikes = game["awayStrikes"].as_i?
       max_outs = game["awayOuts"].as_i?
       number_of_bases_including_home = game["awayBases"].as_i?
     else
+      m << %( - #{colorizer.colorize_string_for_team true, game["awayPitcherName"].to_s} pitching)
+
       max_balls = game["homeBalls"].as_i?
       max_strikes = game["homeStrikes"].as_i?
       max_outs = game["homeOuts"].as_i?
       number_of_bases_including_home = game["homeBases"].as_i?
     end
 
+    m << "\n\r"
     m << game["atBatBalls"]
     if max_balls && max_balls != 4
       m << %( (of #{max_balls}))

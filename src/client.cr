@@ -9,9 +9,11 @@ class Client
   property writeable : Bool = true
   property closed : Bool = false
   property settings : UserSettings = UserSettings.new
-  property last_rendered_message : String = ""
 
-  def initialize(@renderer, @socket, @source)
+  property last_rendered_message : String = ""
+  property last_source_data : SourceData?
+
+  def initialize(@renderer, @socket, @source, @last_source_data)
   end
 
   def close
@@ -20,7 +22,15 @@ class Client
   end
 
   def render(msg : SourceData)
-    @last_rendered_message = @renderer.render msg, settings
+    @last_source_data = msg
+    return @last_rendered_message = @renderer.render msg, settings
+  end
+
+  def rerender
+    if @last_source_data.nil?
+      raise Exception.new("last_source_data is null somehow")
+    end
+    @last_rendered_message = @renderer.render(@last_source_data.not_nil!, settings)
     @last_rendered_message
   end
 end

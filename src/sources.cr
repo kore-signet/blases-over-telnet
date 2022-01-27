@@ -77,16 +77,23 @@ class CompositeLiveSource < Source
     spawn do
       begin
         counter = 0
+        has_sim_data_been_fetched_for_new_day = false
 
         while @running
           any_updates = false
-          if counter % @sim_fetch_frequency_seconds == 0
+          if counter % @sim_fetch_frequency_seconds == 0 || !has_sim_data_been_fetched_for_new_day
             new_sim = get_sim
             if !new_sim.nil?
               Log.trace { "live sim data fetched" }
-              is_sim_data_different = new_sim != @current_data.sim
-              any_updates |= is_sim_data_different
-              Log.trace { "  is_sim_data_different=#{is_sim_data_different}" }
+              if !@current_data.sim.nil?
+                pp @current_data.sim
+                pp new_sim
+                previous_day = @current_data.sim.not_nil!["day"]
+                new_day = new_sim["day"]
+                has_sim_data_been_fetched_for_new_day = new_day != previous_day
+                any_updates |= has_sim_data_been_fetched_for_new_day
+                Log.trace { "  is_sim_data_different=#{has_sim_data_been_fetched_for_new_day} (previous_day=#{previous_day}, new_day=#{new_day})" }
+              end
               @current_data.sim = new_sim
             end
           end
@@ -114,6 +121,7 @@ class CompositeLiveSource < Source
           end
 
           new_games = get_games current_sim["day"].as_i, current_sim["season"].as_i, current_sim["id"].as_s
+          is_game_data_different = false
           if !new_games.nil?
             Log.trace { "live game data fetched" }
             is_game_data_different = new_games != @current_data.games
@@ -127,19 +135,22 @@ class CompositeLiveSource < Source
             @tx.send({@ident, @current_data})
           end
 
-          if !@current_data.games.nil? && @current_data.games.not_nil!.all? { |g| g["gameComplete"].as_bool }
+          if is_game_data_different &&
+             !@current_data.games.nil? &&
+             @current_data.games.not_nil!.all? { |g| g["gameComplete"].as_bool }
             @last_data_fetch_time = Time.utc
 
             Log.debug { "sleeping until top of next hour" }
             counter = 0
             sleep get_top_of_next_hour(@last_data_fetch_time) - @last_data_fetch_time
+            has_sim_data_been_fetched_for_new_day = false
           else
             counter += @loop_frequency_seconds
             sleep @loop_frequency_seconds.seconds
           end
         end
       rescue ex
-        Log.error(exception: ex) {}
+        Log.error(exception: ex) { }
       ensure
         Log.info { "loop ended at time #{Time.utc}" }
         @running = false
@@ -172,15 +183,19 @@ class CompositeLiveSource < Source
     url.query = URI::Params.encode({"type" => entity_type})
     url.path = (Path.new(url.path) / "v2" / "entities").to_s
 
-    response = HTTP::Client.get url
-
-    if response.success?
-      messages = JSON.parse response.body
-      return messages["items"]
-    else
-      Log.error { "http request failed" }
-      Log.error { url }
-      Log.error { response.status_code }
+    begin
+      response = HTTP::Client.get url
+      if response.success?
+        messages = JSON.parse response.body
+        return messages["items"]
+      else
+        Log.error { "http request failed" }
+        Log.error { url }
+        Log.error { response.status_code }
+        return
+      end
+    rescue ex
+      Log.error(exception: ex) { }
       return
     end
   end
@@ -190,15 +205,20 @@ class CompositeLiveSource < Source
     url.query = URI::Params.encode({"day" => day.to_s, "season" => season.to_s, "sim" => sim})
     url.path = (Path.new(url.path) / "v1" / "games").to_s
 
-    response = HTTP::Client.get url
+    begin
+      response = HTTP::Client.get url
 
-    if response.success?
-      messages = JSON.parse response.body
-      return messages["data"].as_a.map { |g| g["data"] }
-    else
-      puts "http request failed"
-      pp url
-      pp response.status_code
+      if response.success?
+        messages = JSON.parse response.body
+        return messages["data"].as_a.map { |g| g["data"] }
+      else
+        puts "http request failed"
+        pp url
+        pp response.status_code
+        return
+      end
+    rescue ex
+      Log.error(exception: ex) { }
       return
     end
   end

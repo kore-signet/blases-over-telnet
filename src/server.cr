@@ -55,11 +55,13 @@ def handle_client(
     # socket << "\x1b[0J"     # clear from cursor to the end of the page
     # socket << "\x1b[10000E" # move cursor down and to start of line
 
-    client = Client.new default_renderer, socket, "live"
+    live_source = sources["live"].as CompositeLiveSource
+    live_source.start
+    client = Client.new default_renderer, socket, "live", live_source.last_data
     sockets << client
-    sources["live"].add_client
+    live_source.add_client
 
-    socket << default_renderer.render sources["live"].last_data, client.settings
+    socket << default_renderer.render live_source.last_data, client.settings
 
     while line = socket.gets chomp: false
       line = line.strip

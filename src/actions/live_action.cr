@@ -17,7 +17,9 @@ class LiveAction < Action
 
     if client.source != "live"
       sources[client.source].rm_client
-      sources["live"].add_client
+      live_source = sources["live"].as CompositeLiveSource
+      live_source.start
+      live_source.add_client
 
       client.socket << "\x1b[1;1H"
       client.socket << "\x1b[0J"
@@ -27,6 +29,7 @@ class LiveAction < Action
 
       client.source = "live"
       client.renderer.clear_last
+      client.socket << client.render live_source.last_data
     end
   end
 end
