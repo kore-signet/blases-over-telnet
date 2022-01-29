@@ -113,18 +113,21 @@ class DefaultLayout < Layout
           m << "\r\n"
         end
 
-        message.games.not_nil!.sort_by { |g| get_team_ordering g }.each do |game|
-          colorizer.current_game = game.as_h
-          game_string = render_game colorizer, game, settings
-          if settings.use_columns
-            game_string, current_row_for_column[column] = move_lines(game_string, column * settings.column_width, current_row_for_column[column])
-            column = (column + 1) % settings.number_of_columns
-            m << game_string
-          else
-            m << game_string
-            m << "\r\n"
+        message.games
+          .not_nil!
+          .sort_by { |g| get_team_ordering g["data"] }
+          .each do |game|
+            colorizer.current_game = game["data"].as_h
+            game_string = render_game colorizer, game, settings
+            if settings.use_columns
+              game_string, current_row_for_column[column] = move_lines(game_string, column * settings.column_width, current_row_for_column[column])
+              column = (column + 1) % settings.number_of_columns
+              m << game_string
+            else
+              m << game_string
+              m << "\r\n"
+            end
           end
-        end
         m << "\r\n"
       end
 
@@ -191,14 +194,22 @@ class DefaultLayout < Layout
 
   def render_game(
     colorizer : Colorizer,
-    game : JSON::Any
+    game_wrapper : JSON::Any,
     settings : UserSettings
   ) : String
+    game = game_wrapper["data"]
+
     away_team_name = get_team_name(game, true)
     home_team_name = get_team_name(game, false)
     away_team_nickname = get_team_nickname(game, true)
     home_team_nickname = get_team_nickname(game, false)
     String.build do |m|
+      if settings.debug
+        m << "duration "
+        m << get_time(game_wrapper["startTime"], game_wrapper["endTime"])
+        m << "\r\n"
+      end
+
       m << %(#{colorizer.colorize_string_for_team true, away_team_name})
       m << %( #{"@".colorize.underline} )
       m << %(#{colorizer.colorize_string_for_team false, home_team_name})
@@ -298,7 +309,11 @@ class DefaultLayout < Layout
             .map { |outcome| outcome.to_s }
             .reject { |outcome| outcome =~ / won the / }
             .each do |outcome|
-              m << make_newlines outcome
+              outcome_as_lines = make_newlines outcome
+              m << outcome_as_lines
+              if !outcome_as_lines.ends_with? "\r\n"
+                m << "\r\n"
+              end
             end
         else
           m << "\r\n"

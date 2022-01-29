@@ -11,6 +11,7 @@ require "./color_diff.cr"
 require "./actions/get_actions.cr"
 
 #
+Log.setup(:trace)
 sockets = Array(Client).new
 
 ENV["SIBR_API_URL"] ||= "https://api.sibr.dev"

@@ -29,6 +29,16 @@ def get_top_of_next_hour(time : Time) : Time
   return result
 end
 
+def get_time(start_time : JSON::Any, end_time : JSON::Any) : Time::Span
+  start_value = Time::Format::ISO_8601_DATE_TIME.parse(start_time.to_s)
+  end_time_string = end_time.as_s?
+  if end_time_string.nil?
+    return Time.utc - start_value
+  else
+    return Time::Format::ISO_8601_DATE_TIME.parse(end_time_string) - start_value
+  end
+end
+
 abstract class Source
   abstract def add_client
   abstract def rm_client
@@ -135,7 +145,8 @@ class CompositeLiveSource < Source
 
           if is_game_data_different &&
              !@current_data.games.nil? &&
-             @current_data.games.not_nil!.all? { |g| g["gameComplete"].as_bool }
+             @current_data.games.not_nil!.all? { |g| g["data"]["gameComplete"].as_bool } &&
+             @current_data.games.not_nil!.all? { |g| get_time(g["startTime"], g["endTime"]) < Time::Span.new(hours: 1) }
             @last_data_fetch_time = Time.utc
 
             Log.debug { "sleeping until top of next hour" }
@@ -208,7 +219,7 @@ class CompositeLiveSource < Source
 
       if response.success?
         messages = JSON.parse response.body
-        return messages["data"].as_a.map { |g| g["data"] }
+        return messages["data"].as_a
       else
         puts "http request failed"
         pp url
