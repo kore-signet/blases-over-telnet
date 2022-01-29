@@ -216,8 +216,9 @@ class DefaultLayout < Layout
       m << %{ (#{colorizer.colorize_string_for_team true, game["awayScore"].to_s} v #{colorizer.colorize_string_for_team false, game["homeScore"].to_s})}
 
       if settings.show_weather
-        m << " "
-        m << @weather_map.display_weather game["weather"].as_i
+        m << " ["
+        m << @weather_map.display_weather game["weather"].as_i, settings
+        m << "]"
       end
 
       m << "\n\r"
