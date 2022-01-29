@@ -4,7 +4,7 @@ require "sse"
 class SourceData
   property temporal : Hash(String, JSON::Any)? = nil
   property games : Array(JSON::Any)? = nil
-  property teams : Array(JSON::Any)? = nil
+  property teams : Hash(String, JSON::Any)? = nil
   property sim : Hash(String, JSON::Any)? = nil
 
   def initialize
@@ -187,12 +187,12 @@ class CompositeLiveSource < Source
     return response.not_nil![0]["data"].as_h
   end
 
-  def get_teams : Array(JSON::Any)?
+  def get_teams : Hash(String, JSON::Any)?
     response = get_chron_entity("Team")
     if response.nil?
       return
     end
-    return response.not_nil!.as_a.map { |e| e["data"] }
+    return response.not_nil!.as_a.to_h { |e| {e["entityId"].to_s, e["data"]} }
   end
 
   def get_chron_entity(entity_type : String) : JSON::Any?

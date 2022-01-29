@@ -46,19 +46,37 @@ end
 
 class Colorizer
   property color_map : ColorMap
+  property source_data : SourceData
+  property settings : UserSettings
   property current_game : Hash(String, JSON::Any)
 
-  def initialize(@color_map, @current_game = Hash(String, JSON::Any).new)
+  def initialize(
+    @color_map,
+    @source_data,
+    @settings,
+    @current_game = Hash(String, JSON::Any).new
+  )
   end
 
   def colorize_string_for_team(
     away? : Bool,
     string : String
   ) : String
+    team_id = @current_game[away? ? "awayTeam" : "homeTeam"]
+    team : JSON::Any? = @source_data.teams.nil? ? nil : @source_data.teams.not_nil!.[team_id]?
+    color : Colorize::Color256
+    if !team.nil?
+      main_color : {UInt8, UInt8, UInt8} = convert_hex_string_to_int_tuple team["mainColor"].as_s
+      secondary_color : {UInt8, UInt8, UInt8} = convert_hex_string_to_int_tuple team["secondaryColor"].as_s
+      color = @color_map.find_furthest_color_from_background *main_color, *secondary_color, *@settings.background
+    else
+      color = @color_map.get_hex_color @current_game[away? ? "awayTeamColor" : "homeTeamColor"].as_s
+    end
+
     string
       .colorize
       .bold
-      .fore(@color_map.get_hex_color @current_game[away? ? "awayTeamColor" : "homeTeamColor"].as_s)
+      .fore(color)
       .to_s
   end
 end
@@ -69,7 +87,7 @@ end
 
 class DefaultLayout < Layout
   property last_message : String = ""
-  property last_teams : Array(JSON::Any) = Array(JSON::Any).new
+  property last_teams : Hash(String, JSON::Any) = Hash(String, JSON::Any).new
   property colorizer : Colorizer
   property feed_season_list : Hash(String, JSON::Any)
   property weather_map : WeatherMap
@@ -172,19 +190,18 @@ class DefaultLayout < Layout
     identifier : String
   ) : String
     if @last_teams
-      target_team_id = away ? game["awayTeam"] : game["homeTeam"]
-      last_teams.each do |team_json|
-        team = team_json.as_h
-        if team["id"] == target_team_id
-          team_name = team[identifier].to_s
-          if team.has_key? "state"
-            team_state = team["state"].as_h
-            if team_state.has_key? "scattered"
-              team_name = team_state["scattered"].as_h[identifier].to_s
-            end
+      target_team_id = game[away ? "awayTeam" : "homeTeam"]
+      team = @last_teams[target_team_id]?
+      if !team.nil?
+        team_name = team[identifier].to_s
+        team_state = team["state"]?
+        if !team_state.nil?
+          team_state_scattered = team_state.not_nil!["scattered"]?
+          if !team_state_scattered.nil?
+            team_name = team_state_scattered[identifier].to_s
           end
-          return team_name
         end
+        return team_name
       end
       return "Unknown Team"
     else

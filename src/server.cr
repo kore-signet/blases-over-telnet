@@ -37,8 +37,11 @@ def handle_client(
   tx : Channel({String, SourceData})
 ) : Nil
   begin
+    live_source = sources["live"].as CompositeLiveSource
+    settings = UserSettings.new
+
     color_map = ColorMap.new "color_data.json"
-    colorizer = Colorizer.new color_map
+    colorizer = Colorizer.new color_map, live_source.last_data, settings
     weather_map = WeatherMap.new "weather.json", color_map
     default_renderer = DefaultLayout.new colorizer, feed_season_list, weather_map
 
@@ -57,9 +60,8 @@ def handle_client(
     # socket << "\x1b[0J"     # clear from cursor to the end of the page
     # socket << "\x1b[10000E" # move cursor down and to start of line
 
-    live_source = sources["live"].as CompositeLiveSource
     live_source.start
-    client = Client.new default_renderer, socket, "live", live_source.last_data
+    client = Client.new default_renderer, socket, "live", live_source.last_data, settings
     sockets << client
     live_source.add_client
 

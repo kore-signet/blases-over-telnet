@@ -8,12 +8,12 @@ class Client
   getter socket : TCPSocket
   property writeable : Bool = true
   property closed : Bool = false
-  property settings : UserSettings = UserSettings.new
+  property settings : UserSettings
 
   property last_rendered_message : String = ""
   property last_source_data : SourceData?
 
-  def initialize(@renderer, @socket, @source, @last_source_data)
+  def initialize(@renderer, @socket, @source, @last_source_data, @settings = UserSettings.new)
   end
 
   def close
