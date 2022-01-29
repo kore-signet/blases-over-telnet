@@ -30,12 +30,17 @@ def get_top_of_next_hour(time : Time) : Time
 end
 
 def get_time(start_time : JSON::Any, end_time : JSON::Any) : Time::Span
-  start_value = Time::Format::ISO_8601_DATE_TIME.parse(start_time.to_s)
-  end_time_string = end_time.as_s?
-  if end_time_string.nil?
-    return Time.utc - start_value
+  start_time_string = start_time.to_s
+  if start_time_string.nil?
+    start_value = Time::Format::ISO_8601_DATE_TIME.parse(start_time_string)
+    end_time_string = end_time.as_s?
+    if end_time_string.nil?
+      return Time.utc - start_value
+    else
+      return Time::Format::ISO_8601_DATE_TIME.parse(end_time_string) - start_value
+    end
   else
-    return Time::Format::ISO_8601_DATE_TIME.parse(end_time_string) - start_value
+    return Time::Span.new
   end
 end
 
@@ -101,6 +106,9 @@ class CompositeLiveSource < Source
                 has_sim_data_been_fetched_for_new_day = new_day != previous_day
                 any_updates |= has_sim_data_been_fetched_for_new_day
                 Log.trace { "  is_sim_data_different=#{has_sim_data_been_fetched_for_new_day} (previous_day=#{previous_day}, new_day=#{new_day})" }
+              else
+                has_sim_data_been_fetched_for_new_day = true
+                any_updates = true
               end
               @current_data.sim = new_sim
             end
