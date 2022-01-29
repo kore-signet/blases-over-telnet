@@ -86,8 +86,6 @@ class CompositeLiveSource < Source
             if !new_sim.nil?
               Log.trace { "live sim data fetched" }
               if !@current_data.sim.nil?
-                pp @current_data.sim
-                pp new_sim
                 previous_day = @current_data.sim.not_nil!["day"]
                 new_day = new_sim["day"]
                 has_sim_data_been_fetched_for_new_day = new_day != previous_day

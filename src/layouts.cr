@@ -1,7 +1,6 @@
 require "colorize"
 require "./sources.cr"
-
-color_map = ColorMap.new "color_data.json"
+require "./weather_map.cr"
 
 def make_ord(number : Number) : String
   if number > 10 && number.to_s[-2] == '1'
@@ -64,8 +63,6 @@ class Colorizer
   end
 end
 
-colorizer = Colorizer.new color_map
-
 abstract class Layout
   abstract def clear_last
 end
@@ -75,8 +72,9 @@ class DefaultLayout < Layout
   property last_teams : Array(JSON::Any) = Array(JSON::Any).new
   property colorizer : Colorizer
   property feed_season_list : Hash(String, JSON::Any)
+  property weather_map : WeatherMap
 
-  def initialize(@colorizer, @feed_season_list)
+  def initialize(@colorizer, @feed_season_list, @weather_map)
   end
 
   def render(
@@ -117,7 +115,7 @@ class DefaultLayout < Layout
 
         message.games.not_nil!.sort_by { |g| get_team_ordering g }.each do |game|
           colorizer.current_game = game.as_h
-          game_string = render_game colorizer, game
+          game_string = render_game colorizer, game, settings
           if settings.use_columns
             game_string, current_row_for_column[column] = move_lines(game_string, column * settings.column_width, current_row_for_column[column])
             column = (column + 1) % settings.number_of_columns
@@ -194,6 +192,7 @@ class DefaultLayout < Layout
   def render_game(
     colorizer : Colorizer,
     game : JSON::Any
+    settings : UserSettings
   ) : String
     away_team_name = get_team_name(game, true)
     home_team_name = get_team_name(game, false)
@@ -204,6 +203,11 @@ class DefaultLayout < Layout
       m << %( #{"@".colorize.underline} )
       m << %(#{colorizer.colorize_string_for_team false, home_team_name})
       m << %{ (#{colorizer.colorize_string_for_team true, game["awayScore"].to_s} v #{colorizer.colorize_string_for_team false, game["homeScore"].to_s})}
+
+      if settings.show_weather
+        m << " "
+        m << @weather_map.display_weather game["weather"].as_i
+      end
 
       m << "\n\r"
 

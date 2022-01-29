@@ -1,0 +1,182 @@
+[
+  {
+    "id": 0,
+    "name": "Void",
+    "background": "#67678a",
+    "color": "#000000"
+  },
+  {
+    "id": 1,
+    "name": "Sun 2",
+    "background": "#db7900",
+    "color": "#fffec4"
+  },
+  {
+    "id": 2,
+    "name": "Overcast",
+    "background": "#cfcfcf",
+    "color": "#737373"
+  },
+  {
+    "id": 3,
+    "name": "Rainy",
+    "background": "#348e9e",
+    "color": "#0727a8"
+  },
+  {
+    "id": 4,
+    "name": "Sandstorm",
+    "background": "#877652",
+    "color": "#e0dac3"
+  },
+  {
+    "id": 5,
+    "name": "Snowy",
+    "background": "#68969e",
+    "color": "#ffffff"
+  },
+  {
+    "id": 6,
+    "name": "Acidic",
+    "background": "#92ad58",
+    "color": "#235917"
+  },
+  {
+    "id": 7,
+    "name": "Solar Eclipse",
+    "background": "#002f3b",
+    "color": "#3c6cba"
+  },
+  {
+    "id": 8,
+    "name": "Glitter",
+    "background": "#ff94ff",
+    "color": "#fff98a"
+  },
+  {
+    "id": 9,
+    "name": "Blooddrain",
+    "background": "#52050f",
+    "color": "#ff1f3c"
+  },
+  {
+    "id": 10,
+    "name": "Peanuts",
+    "background": "#c4aa70",
+    "color": "#423822"
+  },
+  {
+    "id": 11,
+    "name": "Birds",
+    "background": "#45235e",
+    "color": "#8e5fad"
+  },
+  {
+    "id": 12,
+    "name": "Feedback",
+    "background": "#383838",
+    "color": "#ff007b"
+  },
+  {
+    "id": 13,
+    "name": "Reverb",
+    "background": "#443561",
+    "color": "#61b3ff"
+  },
+  {
+    "id": 14,
+    "name": "Black Hole",
+    "background": "#000000",
+    "color": "#00374a"
+  },
+  {
+    "id": 15,
+    "name": "Coffee",
+    "background": "#9a7b4f",
+    "color": "#511c00"
+  },
+  {
+    "id": 16,
+    "name": "Coffee 2",
+    "background": "#44c97c",
+    "color": "#2e1406"
+  },
+  {
+    "id": 17,
+    "name": "Coffee 3s",
+    "background": "#5fa9f1",
+    "color": "#cc527a"
+  },
+  {
+    "id": 18,
+    "name": "Flooding",
+    "background": "#465f63",
+    "color": "#ffffff"
+  },
+  {
+    "id": 19,
+    "name": "Salmon",
+    "background": "#ba7b97",
+    "color": "#f2c7e3"
+  },
+  {
+    "id": 20,
+    "name": "Polarity +",
+    "background": "#042e16",
+    "color": "#d3e3e2"
+  },
+  {
+    "id": 21,
+    "name": "Polarity -",
+    "background": "#3b0422",
+    "color": "#ff6be6"
+  },
+  {
+    "id": 22,
+    "name": "???",
+    "background": "#0e4e8a",
+    "color": "#ffc400"
+  },
+  {
+    "id": 23,
+    "name": "Sun 90",
+    "background": "#0e4e8a",
+    "color": "#ffc400"
+  },
+  {
+    "id": 24,
+    "name": "Sun .1",
+    "background": "#0e4e8a",
+    "color": "#ffc400"
+  },
+  {
+    "id": 25,
+    "name": "Sum Sun",
+    "background": "#0e4e8a",
+    "color": "#ffc400"
+  },
+  {
+    "id": 26,
+    "name": "Supernova Eclipse",
+    "background": "#36001b",
+    "color": "#ffc400"
+  },
+  {
+    "id": 27,
+    "name": "Black Hole (Black Hole)",
+    "background": "#36001b",
+    "color": "#ffc400"
+  },
+  {
+    "id": 28,
+    "name": "Jazz",
+    "background": "#0f592f",
+    "color": "#000000"
+  },
+  {
+    "id": 29,
+    "name": "Night",
+    "background": "#000000",
+    "color": "#ff8d13"
+  }
+]
