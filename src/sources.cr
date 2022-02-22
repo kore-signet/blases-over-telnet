@@ -196,7 +196,7 @@ class CompositeLiveSource < Source
   end
 
   def get_chron_entity(entity_type : String) : JSON::Any?
-    url = URI.parse(ENV["CHRONICLER_URL"] ||= "https://api.sibr.dev/chronicler/")
+    url = URI.parse(ENV["CHRON_API_URL"])
     url.query = URI::Params.encode({"type" => entity_type})
     url.path = (Path.new(url.path) / "v2" / "entities").to_s
 
@@ -218,7 +218,7 @@ class CompositeLiveSource < Source
   end
 
   def get_games(day : Int32, season : Int32, sim : String) : Array(JSON::Any)?
-    url = URI.parse(ENV["CHRONICLER_URL"] ||= "https://api.sibr.dev/chronicler/")
+    url = URI.parse(ENV["CHRON_API_URL"])
     url.query = URI::Params.encode({"day" => day.to_s, "season" => season.to_s, "sim" => sim})
     url.path = (Path.new(url.path) / "v1" / "games").to_s
 
@@ -292,7 +292,7 @@ class ChroniclerSource < Source
   end
 
   def fetch_messages
-    url = URI.parse(ENV["CHRONICLER_URL"] ||= "https://api.sibr.dev/chronicler/")
+    url = URI.parse(ENV["CHRON_API_URL"])
     url.query = URI::Params.encode({"type" => "Stream", "count" => "30", "order" => "asc", "after" => @last_time.to_rfc3339})
     url.path = (Path.new(url.path) / "v2" / "versions").to_s
 

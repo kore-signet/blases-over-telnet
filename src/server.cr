@@ -15,6 +15,7 @@ Log.setup(:trace)
 sockets = Array(Client).new
 
 ENV["SIBR_API_URL"] ||= "https://api.sibr.dev"
+ENV["CHRON_API_URL"] ||= ENV["SIBR_API_URL"] + "/chronicler"
 ENV["PORT"] ||= "8023"
 server = TCPServer.new "0.0.0.0", ENV["PORT"].to_i
 
@@ -26,7 +27,7 @@ sources = Hash(String, Source).new
 puts "starting live feed"
 sources["live"] = CompositeLiveSource.new "live", tx
 puts "fetching feed season list (update me tgb)"
-feed_season_list = JSON.parse((HTTP::Client.get "#{ENV["SIBR_API_URL"]}/chronicler/v2/entities?type=FeedSeasonList").body).as_h
+feed_season_list = JSON.parse((HTTP::Client.get "#{ENV["CHRON_API_URL"]}/v2/entities?type=FeedSeasonList").body).as_h
 
 def handle_client(
   socket : TCPSocket,
