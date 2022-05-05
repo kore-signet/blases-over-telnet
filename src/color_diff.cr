@@ -93,6 +93,49 @@ class ColorMap
     ((l - cl) ** 2) + ((a - ca) ** 2) + ((b - cb) ** 2)
   end
 
+  def pick_contrast_colour(
+    primary_r : UInt8,
+    primary_g : UInt8,
+    primary_b : UInt8,
+    secondary_r : UInt8,
+    secondary_g : UInt8,
+    secondary_b : UInt8,
+    background_r : UInt8,
+    background_g : UInt8,
+    background_b : UInt8,
+    contrast_threshold : Float64
+  )
+    primary_colour_contrast = get_contrast primary_r, primary_g, primary_b, background_r, background_g, background_b
+
+    contrast_ansi : UInt8
+
+    if primary_colour_contrast > contrast_threshold
+      contrast_ansi = find_closest_ansi primary_r, primary_g, primary_b
+    else
+      secondary_colour_contrast = get_contrast secondary_r, secondary_g, secondary_b, background_r, background_g, background_b
+      if secondary_colour_contrast > primary_colour_contrast
+        contrast_ansi = find_closest_ansi secondary_r, secondary_g, secondary_b
+      else
+        contrast_ansi = find_closest_ansi primary_r, primary_g, primary_b
+      end
+    end
+
+    return Colorize::Color256.new contrast_ansi
+  end
+
+  def get_contrast(
+    r_1, g_1, b_1,
+    r_2, g_2, b_2
+  )
+    y_1 = get_relative_luminance r_1, g_1, b_1
+    y_2 = get_relative_luminance r_2, g_2, b_2
+    return (y_1 + 0.05) / (y_2 + 0.05)
+  end
+
+  def get_relative_luminance(r, g, b)
+    (0.2126 * r) + (0.7152 * g) + (0.0722 * b)
+  end
+
   def rgb_to_xyz(r, g, b)
     r /= 255
     g /= 255
