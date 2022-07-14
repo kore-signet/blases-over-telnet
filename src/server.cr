@@ -27,7 +27,8 @@ sources = Hash(String, Source).new
 puts "starting live feed"
 sources["live"] = CompositeLiveSource.new "live", tx
 puts "fetching feed season list (update me tgb)"
-feed_season_list = JSON.parse((HTTP::Client.get "#{ENV["CHRON_API_URL"]}/v2/entities?type=FeedSeasonList").body).as_h
+
+feed_season_list = get_feed_season_list
 
 def handle_client(
   socket : TCPSocket,
@@ -103,6 +104,11 @@ spawn do
   while socket = server.accept?
     spawn handle_client(socket, sockets, sources, feed_season_list, actions_by_aliases, tx)
   end
+end
+
+def get_feed_season_list : Hash(String, JSON::Any)
+  response = HTTP::Client.get "#{ENV["CHRON_API_URL"]}/v2/entities?type=FeedSeasonList"
+  return response.success? ? JSON.parse(response.body).as_h : Hash(String, JSON::Any).new
 end
 
 while data = tx.receive?
