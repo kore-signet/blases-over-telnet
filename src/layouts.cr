@@ -353,6 +353,20 @@ class DefaultLayout < Layout
       m << ". Prize: "
       m << game["state"]["prizeMatch"]["itemName"].to_s.colorize.bold
       m << "\r\n"
+    elsif !game["isTitleMatch"]?.nil? && game["isTitleMatch"].as_bool?
+      m << "Title Match: ".colorize.bold
+      is_away_team_defending = @last_teams[game["awayTeam"].as_s]["permAttr"].as_a.any? { |attr| attr == "TITLE_BELT" }
+      is_home_team_defending = @last_teams[game["homeTeam"].as_s]["permAttr"].as_a.any? { |attr| attr == "TITLE_BELT" }
+      if is_away_team_defending && is_home_team_defending
+        m << colorizer.colorize_string_for_team true, game["awayTeamName"].as_s
+        m << " and ".colorize.bold
+        m << colorizer.colorize_string_for_team false, game["homeTeamName"].as_s
+        m << " defending\r\n"
+      elsif is_away_team_defending
+        m << %(#{colorizer.colorize_string_for_team true, game["awayTeamName"].as_s} defending\r\n)
+      elsif is_home_team_defending
+        m << %(#{colorizer.colorize_string_for_team false, game["homeTeamName"].as_s} defending\r\n)
+      end
     end
 
     is_top_of_inning = game["topOfInning"].as_bool
