@@ -62,22 +62,25 @@ class Colorizer
     away? : Bool,
     string : String
   ) : String
-    team_id = @current_game[away? ? "awayTeam" : "homeTeam"]
-    team : JSON::Any? = @source_data.teams.nil? ? nil : @source_data.teams.not_nil!.[team_id]?
-    color : Colorize::Color256
-    if !team.nil?
-      main_color : {UInt8, UInt8, UInt8} = convert_hex_string_to_int_tuple team["mainColor"].as_s
-      secondary_color : {UInt8, UInt8, UInt8} = convert_hex_string_to_int_tuple team["secondaryColor"].as_s
-      color = @color_map.find_furthest_color_from_background *main_color, *secondary_color, *@settings.background
-    else
+    color = get_colour_for_team @current_game[away? ? "awayTeam" : "homeTeam"].as_s
+    if !color.nil?
       color = @color_map.get_hex_color @current_game[away? ? "awayTeamColor" : "homeTeamColor"].as_s
     end
 
     string
       .colorize
       .bold
-      .fore(color)
+      .fore(color.not_nil!)
       .to_s
+  end
+
+  def get_colour_for_team(team_id : String) : Colorize::Color256?
+    team : JSON::Any? = @source_data.teams.nil? ? nil : @source_data.teams.not_nil!.[team_id]?
+    if !team.nil?
+      main_color : {UInt8, UInt8, UInt8} = convert_hex_string_to_int_tuple team["mainColor"].as_s
+      secondary_color : {UInt8, UInt8, UInt8} = convert_hex_string_to_int_tuple team["secondaryColor"].as_s
+      return @color_map.pick_contrast_colour *main_color, *secondary_color, *@settings.background, @settings.contrast_threshold
+    end
   end
 end
 

@@ -9,11 +9,19 @@ class Client
   property writeable : Bool = true
   property closed : Bool = false
   property settings : UserSettings
+  property colorizer : Colorizer
 
   property last_rendered_message : String = ""
   property last_source_data : SourceData?
 
-  def initialize(@renderer, @socket, @source, @last_source_data, @settings = UserSettings.new)
+  def initialize(
+    @renderer,
+    @socket,
+    @source,
+    @last_source_data,
+    @colorizer,
+    @settings = UserSettings.new
+  )
   end
 
   def close

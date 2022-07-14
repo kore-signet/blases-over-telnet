@@ -62,7 +62,7 @@ def handle_client(
     # socket << "\x1b[10000E" # move cursor down and to start of line
 
     live_source.start
-    client = Client.new default_renderer, socket, "live", live_source.last_data, settings
+    client = Client.new default_renderer, socket, "live", live_source.last_data, colorizer, settings
     sockets << client
     live_source.add_client
 
