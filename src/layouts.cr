@@ -1,5 +1,5 @@
 require "colorize"
-require "./sources.cr"
+require "./sources/source_data.cr"
 require "./weather_map.cr"
 
 def make_ord(number : Number) : String
@@ -75,7 +75,7 @@ class Colorizer
   end
 
   def get_colour_for_team(team_id : String) : Colorize::Color256?
-    team : JSON::Any? = @source_data.teams.nil? ? nil : @source_data.teams.not_nil!.[team_id]?
+    team : TeamData? = @source_data.teams.nil? ? nil : @source_data.teams.not_nil![team_id]?
     if !team.nil?
       main_color : {UInt8, UInt8, UInt8} = convert_hex_string_to_int_tuple team["mainColor"].as_s
       secondary_color : {UInt8, UInt8, UInt8} = convert_hex_string_to_int_tuple team["secondaryColor"].as_s
@@ -90,7 +90,7 @@ end
 
 class DefaultLayout < Layout
   property last_message : String = ""
-  property last_teams : Hash(String, JSON::Any) = Hash(String, JSON::Any).new
+  property last_teams : Hash(TeamId, TeamData) = Hash(TeamId, TeamData).new
   property colorizer : Colorizer
   property feed_season_list : Hash(String, JSON::Any)
   property weather_map : WeatherMap
@@ -214,7 +214,7 @@ class DefaultLayout < Layout
 
   def render_game(
     colorizer : Colorizer,
-    game_wrapper : JSON::Any,
+    game_wrapper : GameData,
     settings : UserSettings
   ) : String
     game = game_wrapper["data"]
