@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  vcr:
+    build: /home/lofty/Documents/Creative/Programming/Web/blaseball-vcr
+    volumes:
+     - /srv/docker/vcr/Vcr.toml:/Vcr.toml
+
+  why:
+    build: .
+    ports:
+      - "23:23"
+    environment:
+      - PORT=23
+      - SIBR_API_URL=localhost:8000/vcr
+      - CHRON_API_URL=localhost:8000/vcr
+    restart: unless-stopped

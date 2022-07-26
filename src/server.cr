@@ -14,8 +14,13 @@ require "./actions/get_actions.cr"
 Log.setup(:trace)
 sockets = Array(Client).new
 
-ENV["SIBR_API_URL"] ||= "https://api.sibr.dev"
-ENV["CHRON_API_URL"] ||= ENV["SIBR_API_URL"] + "/chronicler"
+{% if flag?(:vcr) %}
+  ENV["SIBR_API_URL"] ||= "127.0.0.1:8000/vcr"
+  ENV["CHRON_API_URL"] ||= ENV["SIBR_API_URL"]
+{% else %}
+  ENV["SIBR_API_URL"] ||= "https://api.sibr.dev"
+  ENV["CHRON_API_URL"] ||= ENV["SIBR_API_URL"] + "/chronicler"
+{% end %}
 ENV["PORT"] ||= "8023"
 server = TCPServer.new "0.0.0.0", ENV["PORT"].to_i
 
