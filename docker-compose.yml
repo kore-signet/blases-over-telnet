@@ -7,5 +7,5 @@ services:
       - "23:23"
     environment:
       - "PORT=23"
-      - "STREAM_URL=https://api.blaseball.com/events/streamData"
+      - "SIBR_API_URL=https://api.sibr.dev"
     restart: unless-stopped
