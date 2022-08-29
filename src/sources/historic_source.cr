@@ -133,7 +133,7 @@ class ChroniclerSource < Source
       end
     end
 
-    return @current_time
+    return max_time
   end
 
   def update_day_and_season_if_necessary : DataChangeStatus
