@@ -63,7 +63,7 @@ class Colorizer
     string : String
   ) : String
     color = get_colour_for_team @current_game[away? ? "awayTeam" : "homeTeam"].as_s
-    if !color.nil?
+    if color.nil?
       color = @color_map.get_hex_color @current_game[away? ? "awayTeamColor" : "homeTeamColor"].as_s
     end
 
