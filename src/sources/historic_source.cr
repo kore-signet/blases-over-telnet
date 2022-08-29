@@ -209,47 +209,16 @@ class ChroniclerSource < Source
   end
 
   def update_teams_if_necessary : DataChangeStatus
-    if @historic_teams.size == 0
-      team_keys = get_team_keys
-      if team_keys.nil?
-        raise "Tried to get team ids but couldn't"
-      end
-      team_keys.not_nil!.each do |team_id|
-        @historic_teams[team_id] = Array(TeamData).new
-      end
-    end
-
-    all_teams_out_of_data = true
-    any_teams_updated = false
-    is_first_time = @current_teams.size == 0
-
-    @historic_teams.each do |team_id, updates_for_team|
-      if updates_for_team.size == 0
-        # does this work??
-        updates_for_team = @historic_teams[team_id] = get_updates_for_team_since_time team_id, @current_time
-        # updates_for_team = @historic_teams[team_id]
-      end
-
-      if updates_for_team.size > 0
-        all_teams_out_of_data = false
-
-        time_of_next_update = Time::Format::ISO_8601_DATE_TIME.parse updates_for_team[0]["validFrom"].as_s
-
-        if time_of_next_update <= @current_time
-          @current_teams[team_id] = updates_for_team.shift["data"].as_h
-          any_teams_updated = true
-        end
-      end
-    end
-
-    if any_teams_updated
-      Log.info &.emit "Teams have updated", ident: @ident
-      return DataChangeStatus::Updated
-    elsif all_teams_out_of_data
-      return DataChangeStatus::NoMoreData
-    else
+    if @current_teams.size > 0
       return DataChangeStatus::NoChanges
     end
+
+    current_teams = get_teams_currently
+    if current_teams.nil?
+      raise "Could not get team entities data from chron"
+    end
+    @current_teams = current_teams.not_nil!
+    return DataChangeStatus::Updated
   end
 
   def have_all_games_finished : Bool
@@ -385,7 +354,7 @@ class ChroniclerSource < Source
     end
   end
 
-  def get_team_keys : Array(TeamId)?
+  def get_teams_currently : Hash(TeamId, TeamData)?
     url = URI.parse(ENV["CHRON_API_URL"])
     url.query = URI::Params.encode({"type" => "team"})
     url.path = (Path.new(url.path) / "v2" / "entities").to_s
@@ -394,7 +363,7 @@ class ChroniclerSource < Source
       response = HTTP::Client.get url
       if response.success?
         messages = JSON.parse response.body
-        return messages["items"].as_a.map { |team| team["entityId"].as_s }
+        return messages["items"].as_a.to_h { |team| {team["entityId"].as_s, team["data"].as_h} }
       else
         Log.error { "http request failed" }
         Log.error { url }
@@ -405,53 +374,6 @@ class ChroniclerSource < Source
       Log.error(exception: ex) { }
       return nil
     end
-  end
-
-  def get_updates_for_team_since_time(team_id : TeamId, time : Time) : TeamDataOverTime
-    updates = Array(TeamData).new
-
-    versions_url = URI.parse(ENV["CHRON_API_URL"])
-    versions_url.query = URI::Params.encode({
-      "type"  => "team",
-      "id"    => team_id,
-      "after" => Time::Format::ISO_8601_DATE_TIME.format(time),
-      "count" => 3.to_s,
-    })
-    versions_url.path = (Path.new(versions_url.path) / "v2" / "versions").to_s
-
-    begin
-      response = HTTP::Client.get versions_url
-      if response.success?
-        messages = JSON.parse response.body
-        updates += messages["items"].as_a.map { |team_update| team_update.as_h }
-      else
-        Log.error &.emit "http request failed", url: versions_url.to_s, status_code: response.status_code
-      end
-    rescue ex
-      Log.error(exception: ex) { }
-    end
-
-    entities_url = URI.parse(ENV["CHRON_API_URL"])
-    entities_url.query = URI::Params.encode({
-      "type" => "team",
-      "id"   => team_id,
-      "at"   => Time::Format::ISO_8601_DATE_TIME.format(time),
-    })
-    entities_url.path = (Path.new(entities_url.path) / "v2" / "entities").to_s
-
-    begin
-      response = HTTP::Client.get entities_url
-      if response.success?
-        messages = JSON.parse response.body
-        updates.unshift messages["items"].as_a[0].as_h
-      else
-        Log.error &.emit "http request failed", url: entities_url.to_s, status_code: response.status_code
-      end
-    rescue ex
-      Log.error(exception: ex) { }
-    end
-
-    return updates
   end
 
   def last_data : SourceData
