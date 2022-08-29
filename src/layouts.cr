@@ -225,8 +225,16 @@ class DefaultLayout < Layout
     home_team_nickname = get_team_nickname(game, false)
     String.build do |m|
       if settings.debug
-        m << "duration "
-        m << get_time(game_wrapper["startTime"], game_wrapper["endTime"])
+        # why doesn't json::any have a "contains" method?? so weird
+        if !game_wrapper["startTime"]?.nil?
+          # live games, from "v1/games?" endpoint
+          m << "duration "
+          m << get_time(game_wrapper["startTime"], game_wrapper["endTime"])
+        else
+          # historic games, from "v1/games/updates" endpoint
+          m << "timestamp "
+          m << game_wrapper["timestamp"]
+        end
         m << "\r\n"
       end
 
