@@ -1,5 +1,6 @@
 require "colorize"
 require "./sources/source_data.cr"
+require "./user_settings.cr"
 require "./weather_map.cr"
 
 def make_ord(number : Number) : String

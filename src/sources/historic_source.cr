@@ -1,3 +1,7 @@
+require "log"
+require "http"
+require "./base_source.cr"
+
 alias SimDataOverTime = Array(SimData)
 alias TeamDataOverTime = Array(TeamData)
 alias GameDataOverTime = Array(GameData)
@@ -26,12 +30,15 @@ class ChroniclerSource < Source
   def initialize(
     start_time : Time,
     @ident : String,
-    @tx : Channel({String, SourceData})
+    @tx : Channel({String, SourceData}),
+    should_autostart : Bool = true
   )
     @current_time = start_time
     @current_data = SourceData.new
 
-    start
+    if should_autostart
+      start
+    end
   end
 
   def add_client
@@ -77,10 +84,8 @@ class ChroniclerSource < Source
         end
         time_that_next_data_expires = get_time_that_next_data_expires
         if time_that_next_data_expires == @current_time
-          # no
-          pp time_that_next_data_expires
-          pp @current_time
-          raise "Somehow... palpatine has returned"
+          Log.error &.emit "Time was incorrect", time_that_next_data_expires: time_that_next_data_expires, current_time: @current_time
+          raise "Didn't increment current time, attempted to sleep for no seconds, would loop infinitely"
         end
 
         time_to_next_event = time_that_next_data_expires - @current_time
@@ -99,7 +104,7 @@ class ChroniclerSource < Source
     # let me set my max time to 20020, crystal
     max_time : Time = Time.utc(9999, 10, 4)
 
-    Log.trace { "Getting time that data expires" }
+    Log.trace &.emit "Getting time that data expires", current_time: @current_time
 
     if !@historic_sims.nil? && @historic_sims.not_nil!.size > 0
       next_sim_valid_from = Time::Format::ISO_8601_DATE_TIME.parse @historic_sims.not_nil![0]["validFrom"].as_s
@@ -186,7 +191,7 @@ class ChroniclerSource < Source
           @current_games[game_id] = updates_for_game.shift
 
           # i have no idea how this is going to work with cancelled games in s24. s24 my beloathed
-          # turns outl fnine. those games _did_ start, weirdly
+          # turns out fine. those games _did_ start, weirdly
           while !@current_games[game_id]["data"]["gameStart"].as_bool && updates_for_game.size > 0
             Log.info &.emit "Discarding update for game, bcs game hasn't started yet", game_id: game_id, timestamp: time_of_next_update
 
@@ -195,6 +200,8 @@ class ChroniclerSource < Source
           end
 
           Log.info &.emit "Pushing update for game", game_id: game_id, timestamp: time_of_next_update, next_timestamp: Time::Format::ISO_8601_DATE_TIME.parse updates_for_game[0]["timestamp"].as_s
+          Log.trace &.emit "\tRemaining updates", game_id: game_id, number_of_updates: updates_for_game.size
+
           any_games_updated = true
         end
       end
