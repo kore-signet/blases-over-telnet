@@ -28,6 +28,8 @@ class DisplayAction < Action
           client.settings.background = {0xFF_u8, 0xFF_u8, 0xFF_u8}
         elsif args[1] == "dark"
           client.settings.background = {0x00_u8, 0x00_u8, 0x00_u8}
+        elsif args[1] == "snow"
+          client.settings.show_snow = !client.settings.show_snow
         end
       else
         if args[1] == "debug"
