@@ -202,7 +202,7 @@ class ChroniclerSource < Source
       Log.trace &.emit "\tupdated day (0-indexed)", ident: @ident, old_zero_indexed_day: @current_zero_indexed_day, new_zero_indexed_day: new_zero_indexed_day
       @current_zero_indexed_day = new_zero_indexed_day
       @current_season = pending_sim.not_nil!["season"].as_i
-      current_sim_id = pending_sim.not_nil!["sim"]?
+      current_sim_id = pending_sim.not_nil!["id"]?
       if current_sim_id.nil?
         @current_sim_id_yo = "thisidisstaticyo"
       else
