@@ -5,9 +5,9 @@ abstract class Source
   abstract def n_clients
   abstract def last_data
 
-  def get_most_recent_event_for_games(day : Int32, season : Int32, sim : String) : Array(GameData)?
+  def get_most_recent_event_for_games(zero_indexed_day : Int32, season : Int32, sim : String) : Array(GameData)?
     url = URI.parse(ENV["CHRON_API_URL"])
-    url.query = URI::Params.encode({"day" => day.to_s, "season" => season.to_s, "sim" => sim})
+    url.query = URI::Params.encode({"day" => zero_indexed_day.to_s, "season" => season.to_s, "sim" => sim})
     url.path = (Path.new(url.path) / "v1" / "games").to_s
 
     begin
