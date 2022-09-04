@@ -29,5 +29,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/alisww/blases-over-telnet:latest
-            ghcr.io/alisww/blases-over-telnet:${{ github.sha }}
+            ghcr.io/emily-signet/blases-over-telnet:latest
+            ghcr.io/emily-signet/blases-over-telnet:${{ github.sha }}
