@@ -142,8 +142,13 @@ class ChroniclerSource < Source
           else
             while next_update_timestamp <= @current_time
               Log.trace { "\tremoving game update #{game_id}/#{next_update_timestamp} in get_time_next_data_expires because timestamp in the past" }
-              game_updates.shift
-              next_update_timestamp = Time::Format::ISO_8601_DATE_TIME.parse game_updates[0]["timestamp"].as_s
+              removed_update = game_updates.shift
+              if game_updates.size == 0
+                Log.info &.emit "Removed final update for game", game_id: game_id, timestamp: next_update_timestamp, game_finished: removed_update["data"]["gameComplete"].as_bool
+                next_update_timestamp = max_time
+              else
+                next_update_timestamp = Time::Format::ISO_8601_DATE_TIME.parse game_updates[0]["timestamp"].as_s
+              end
             end
           end
 
