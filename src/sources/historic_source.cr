@@ -183,7 +183,7 @@ class ChroniclerSource < Source
     end
 
     next_sim_valid_from = Time::Format::ISO_8601_DATE_TIME.parse @historic_sims.not_nil![0]["validFrom"].as_s
-    if next_sim_valid_from <= @current_time
+    if @current_sim.nil? || next_sim_valid_from <= @current_time
       Log.trace &.emit "Updating current data for sim", next: next_sim_valid_from, current: @current_time
       pending_sim = @historic_sims.not_nil!.shift["data"].as_h
 
