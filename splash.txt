@@ -35,3 +35,11 @@ a live and historic blaseball viewer.
 by emily and lofty.
 
 it's pronounced sibr.
+
+blaseball is currently on siesta, but it will Return.
+
+Until then, feel free to watch old games back, by typing
+"replay: ", followed by the timestamp you would like to
+replay from, followed by the enter key.
+
+type "help" and press enter for more commands.
