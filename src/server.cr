@@ -52,7 +52,7 @@ def handle_client(
     colorizer = Colorizer.new color_map, live_source.last_data, settings
     weather_map = WeatherMap.new "weather.json", color_map
     default_renderer = DefaultLayout.new colorizer, feed_season_list, weather_map
-    splash_message = File.read("splash.txt")
+    splash_message = File.read("splash.txt").gsub('\n', "\r\n")
 
     # trash telnet handshake if present; timeout after 500ms and continue if there's no handshake to be read
     socket.read_timeout = Time::Span.new(nanoseconds: 500_000_000)
