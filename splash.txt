@@ -30,16 +30,24 @@ the society for internet blaseball research is pleased to present
             | ||  __/ | | | |  __/ | 
              \__\___|_|_| |_|\___|\__|
 
-a live and historic blaseball viewer.
+a historic blaseball viewer, bringing you blaseball from
+38 thousand feet, and the german goverment's email service
 
 by emily and lofty.
 
 it's pronounced sibr.
 
-blaseball is currently on siesta, but it will Return.
 
-Until then, feel free to watch old games back, by typing
-"replay: ", followed by the timestamp you would like to
-replay from, followed by the enter key.
+
+riv to the splort of blaseball.
+may the game live forever.
+
+
+
+to watch old games back, type "replay: ", followed by
+the timestamp you would like to replay from, followed by
+the enter key. this should work for seasons 3 through 24.
+gamma games are a work in progress. coronation games are
+a work in stasis.
 
 type "help" and press enter for more commands.
